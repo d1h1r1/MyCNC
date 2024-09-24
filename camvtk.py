@@ -103,6 +103,9 @@ def drawBallCutter(myscreen, c, p):
     return acts
 
 
+
+
+
 class VTKScreen():
     """
     a vtk render window for displaying geometry
@@ -120,8 +123,13 @@ class VTKScreen():
 
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetRenderWindow(self.renWin)
-        interactorstyle = self.iren.GetInteractorStyle()
-        interactorstyle.SetCurrentStyleToTrackballCamera()
+
+        # interactorstyle = self.iren.GetInteractorStyle()
+        # interactorstyle.SetCurrentStyleToTrackballCamera()
+        style = CustomInteractorStyle()
+        style.SetDefaultRenderer(self.ren)
+        self.iren.SetInteractorStyle(style)
+
         self.camera = vtk.vtkCamera()
         self.camera.SetClippingRange(0.01, 1000)
         self.camera.SetFocalPoint(0, 0, 0)
@@ -130,6 +138,9 @@ class VTKScreen():
         self.camera.SetViewUp(0, 0, 1)
         self.ren.SetActiveCamera(self.camera)
         self.iren.Initialize()
+
+        # self.iren.AddObserver('TimerEvent', self.render)
+        # self.timer_id = self.iren.CreateRepeatingTimer(100)  # 每100毫秒渲染一次
 
     def setAmbient(self, r, g, b):
         """ set ambient color """
@@ -385,7 +396,9 @@ class Circle(CamvtkActor):
 
 class Arc(CamvtkActor):
     """ circle"""
-    def __init__(self, center_offset=(0, 0, 0), start_point=(0, 0, 0), end_point=(0, 0, 0), color=(0, 1, 1), clockwise=True):
+
+    def __init__(self, center_offset=(0, 0, 0), start_point=(0, 0, 0), end_point=(0, 0, 0), color=(0, 1, 1),
+                 clockwise=True):
         """ create circle """
 
         def calculate_angle(center, point):
@@ -725,7 +738,6 @@ class PointCloud(CamvtkActor):
         self.mapper.SetInputData(self.src)
         self.SetMapper(self.mapper)
         # self.SetColor(color)
-
 
 
 class Plane(CamvtkActor):

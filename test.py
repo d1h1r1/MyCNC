@@ -33,7 +33,7 @@ def test_gcode():
             elif "G02" in code or "G03" in code:
                 center_offset = [0, 0, 0]
                 start_point = (txt_dist['X'], txt_dist['Y'], txt_dist['Z'])
-                print("start", start_point)
+                # print("start", start_point)
                 if 'X' in keys_list:
                     txt_dist['X'] = result['X']
                 if 'Y' in keys_list:
@@ -45,17 +45,17 @@ def test_gcode():
                 if 'J' in keys_list:
                     center_offset[1] = result['J']
                 end_point = (txt_dist['X'], txt_dist['Y'], txt_dist['Z'])
-                print("end", end_point)
+                # print("end", end_point)
                 if "G02" in code:
                     txt_dist['G'] = "G02"
                     clockwise = False
                 elif "G03" in code:
                     txt_dist['G'] = "G03"
                     clockwise = True
-                myscreen.addActor(
-                    camvtk.Arc(start_point=start_point, end_point=end_point,
-                               center_offset=center_offset,
-                               clockwise=clockwise))
+                # myscreen.addActor(
+                #     camvtk.Arc(start_point=start_point, end_point=end_point,
+                #                center_offset=center_offset,
+                #                clockwise=clockwise))
             elif "G" not in code:
                 before = txt_dist['G']
                 start_point = (txt_dist['X'], txt_dist['Y'], txt_dist['Z'])
@@ -69,6 +69,7 @@ def test_gcode():
                 if before == "G00" or before == "G01":
                     myscreen.addActor(camvtk.Line(p1=start_point, p2=end_point))
     myscreen.iren.Start()
+
 
 def vtk_visualize_parallel_finish_zig():
     myscreen = camvtk.VTKScreen()

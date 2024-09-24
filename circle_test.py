@@ -63,6 +63,7 @@ arc1.Update()
 # 创建 Mapper 和 Actor
 mapper1 = vtk.vtkPolyDataMapper()
 mapper1.SetInputConnection(arc1.GetOutputPort())
+
 actor2 = vtk.vtkActor()
 actor2.GetProperty().SetLineWidth(5)  # 设置线宽为5
 actor2.SetMapper(mapper1)
