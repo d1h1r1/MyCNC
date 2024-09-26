@@ -124,15 +124,12 @@ class VTKScreen():
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetRenderWindow(self.renWin)
 
-        # interactorstyle = self.iren.GetInteractorStyle()
-        # interactorstyle.SetCurrentStyleToTrackballCamera()
-        style = CustomInteractorStyle()
-        style.SetDefaultRenderer(self.ren)
-        self.iren.SetInteractorStyle(style)
+        interactorstyle = self.iren.GetInteractorStyle()
+        interactorstyle.SetCurrentStyleToTrackballCamera()
 
         self.camera = vtk.vtkCamera()
         self.camera.SetClippingRange(0.01, 1000)
-        self.camera.SetFocalPoint(0, 0, 0)
+        self.camera.SetFocalPoint(0, 50, 0)
         self.camera.SetPosition(0, 35, 5)
         self.camera.SetViewAngle(30)
         self.camera.SetViewUp(0, 0, 1)
@@ -429,7 +426,7 @@ class Arc(CamvtkActor):
             return points
 
         radius = math.sqrt(center_offset[0] ** 2 + center_offset[1] ** 2)
-        center = (start_point[0] + center_offset[0], start_point[1] + center_offset[1], 0.0)
+        center = (start_point[0] + center_offset[0], start_point[1] + center_offset[1], start_point[2] + center_offset[2])
 
         # 计算起始点和终止点相对于圆心的角度
         start_angle = calculate_angle(center, start_point)  # 起始角度

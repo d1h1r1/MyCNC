@@ -1,7 +1,7 @@
 import camvtk
 import re
 
-with open("file/elephant.nc", "r") as f:
+with open("../file/elephant.nc", "r") as f:
     lines = f.readlines()
 
 txt_dist = {"X": 0.0, "Y": 0.0, "Z": 0.0, "G": ""}
