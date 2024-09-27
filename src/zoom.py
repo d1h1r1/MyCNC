@@ -1,5 +1,6 @@
 import vtk
 
+
 class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -8,7 +9,6 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.zoom_factor = 1.0
 
     def OnMouseWheelForward(self, obj, event):
-
         self.zoom_factor *= 1.1  # 每次滚动放大10%
         print(f"当前缩放比例: {self.zoom_factor:.2f}x")
         # self.OnMouseWheelForwardEvent()
@@ -19,6 +19,7 @@ class MouseInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         print(f"当前缩放比例: {self.zoom_factor:.2f}x")
         # self.OnMouseWheelBackwardEvent()
         return
+
 
 # 创建一个渲染器、渲染窗口和交互器
 renderer = vtk.vtkRenderer()

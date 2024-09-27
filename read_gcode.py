@@ -1,6 +1,6 @@
 import re
 
-with open("file/4.txt", "r") as f:
+with open("file/4.nc", "r") as f:
     lines = f.readlines()
 
 txt_dist = {"X": 0, "Y": 0, "Z": 0, "G": ""}

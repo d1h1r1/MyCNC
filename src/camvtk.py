@@ -21,23 +21,6 @@ cyan = (0, 1, 1)
 mag = (float(153) / 255, float(42) / 255, float(165) / 255)
 
 
-def drawCLPointCloud(myscreen, clpts):
-    point_actor = PointCloud(pointlist=clpts)
-    point_actor.SetPoints()
-    myscreen.addActor(point_actor)
-
-
-def drawCLPoints(myscreen, clpoints):
-    for cl in clpoints:
-        myscreen.addActor(Point(center=(cl.x, cl.y, cl.z)))
-
-
-def drawCCPoints(myscreen, clpoints):
-    for cl in clpoints:
-        cc = cl.getCC()
-        myscreen.addActor(Point(center=(cc.x, cc.y, cc.z)))
-
-
 def drawOCLtext(myscreen):
     t = Text()
     t.SetPos((myscreen.width - 200, myscreen.height - 50))
@@ -46,31 +29,7 @@ def drawOCLtext(myscreen):
     myscreen.addActor(t)
 
 
-def drawBB(myscreen, vol):
-    """ draw a bounding-box """
-    lines = []
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.miny, vol.bb.minz), p2=(vol.bb.maxx, vol.bb.miny, vol.bb.minz)))
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.maxy, vol.bb.minz), p2=(vol.bb.maxx, vol.bb.maxy, vol.bb.minz)))
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.maxy, vol.bb.maxz), p2=(vol.bb.maxx, vol.bb.maxy, vol.bb.maxz)))
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.miny, vol.bb.maxz), p2=(vol.bb.maxx, vol.bb.miny, vol.bb.maxz)))
-
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.miny, vol.bb.minz), p2=(vol.bb.minx, vol.bb.miny, vol.bb.maxz)))
-    lines.append(Line(p1=(vol.bb.maxx, vol.bb.miny, vol.bb.minz), p2=(vol.bb.maxx, vol.bb.miny, vol.bb.maxz)))
-
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.maxy, vol.bb.minz), p2=(vol.bb.minx, vol.bb.maxy, vol.bb.maxz)))
-    lines.append(Line(p1=(vol.bb.maxx, vol.bb.maxy, vol.bb.minz), p2=(vol.bb.maxx, vol.bb.maxy, vol.bb.maxz)))
-
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.miny, vol.bb.minz), p2=(vol.bb.minx, vol.bb.maxy, vol.bb.minz)))
-    lines.append(Line(p1=(vol.bb.maxx, vol.bb.miny, vol.bb.minz), p2=(vol.bb.maxx, vol.bb.maxy, vol.bb.minz)))
-
-    lines.append(Line(p1=(vol.bb.minx, vol.bb.miny, vol.bb.maxz), p2=(vol.bb.minx, vol.bb.maxy, vol.bb.maxz)))
-    lines.append(Line(p1=(vol.bb.maxx, vol.bb.miny, vol.bb.maxz), p2=(vol.bb.maxx, vol.bb.maxy, vol.bb.maxz)))
-
-    for l in lines:
-        myscreen.addActor(l)
-
-
-def drawArrows(myscreen, center=(0, 0, 0)):
+def old_drawArrows(myscreen, center=(0, 0, 0)):
     # X Y Z arrows
     arrowcenter = center
     xar = Arrow(color=red, center=arrowcenter, rotXYZ=(0, 0, 0))
@@ -79,6 +38,20 @@ def drawArrows(myscreen, center=(0, 0, 0)):
     myscreen.addActor(xar)
     myscreen.addActor(yar)
     myscreen.addActor(zar)
+
+
+def drawArrows(myscreen, center=(0, 0, 0)):
+    axes = vtk.vtkAxesActor()
+    axes.SetTotalLength(20, 20, 20)
+    axes.SetXAxisLabelText("")
+    axes.SetYAxisLabelText("")
+    axes.SetZAxisLabelText("")
+    # 设置轴的颜色
+    axes.GetXAxisShaftProperty().SetColor(1, 0, 0)  # 红色
+    axes.GetYAxisShaftProperty().SetColor(0, 1, 0)  # 绿色
+    axes.GetZAxisShaftProperty().SetColor(0, 0, 1)  # 蓝色
+
+    myscreen.addActor(axes)
 
 
 def drawCylCutter(myscreen, c, p):
@@ -101,9 +74,6 @@ def drawBallCutter(myscreen, c, p):
     acts.append(cyl)
     acts.append(sph)
     return acts
-
-
-
 
 
 class VTKScreen():
@@ -131,7 +101,7 @@ class VTKScreen():
         self.camera.SetClippingRange(0.01, 1000)
         self.camera.SetFocalPoint(0, 50, 0)
         self.camera.SetPosition(0, 35, 5)
-        self.camera.SetViewAngle(30)
+        self.camera.SetViewAngle(90)
         self.camera.SetViewUp(0, 0, 1)
         self.ren.SetActiveCamera(self.camera)
         self.iren.Initialize()
@@ -339,6 +309,25 @@ class Line(CamvtkActor):
         self.SetColor(color)
 
 
+class Lines(CamvtkActor):
+    """ lines """
+
+    def __init__(self, points, color=(0, 1, 1)):
+        """ line """
+        self.append_filter = vtk.vtkAppendPolyData()
+        for p1, p2 in points:
+            line_source = vtk.vtkLineSource()
+            line_source.SetPoint1(p1)
+            line_source.SetPoint2(p2)
+            line_source.Update()
+            self.append_filter.AddInputData(line_source.GetOutput())
+        self.append_filter.Update()
+        self.mapper = vtk.vtkPolyDataMapper()
+        self.mapper.SetInputData(self.append_filter.GetOutput())
+        self.SetMapper(self.mapper)
+        self.SetColor(color)
+
+
 class Tube(CamvtkActor):
     """ line with tube filter"""
 
@@ -426,7 +415,8 @@ class Arc(CamvtkActor):
             return points
 
         radius = math.sqrt(center_offset[0] ** 2 + center_offset[1] ** 2)
-        center = (start_point[0] + center_offset[0], start_point[1] + center_offset[1], start_point[2] + center_offset[2])
+        center = (
+            start_point[0] + center_offset[0], start_point[1] + center_offset[1], start_point[2] + center_offset[2])
 
         # 计算起始点和终止点相对于圆心的角度
         start_angle = calculate_angle(center, start_point)  # 起始角度
@@ -434,7 +424,7 @@ class Arc(CamvtkActor):
 
         points = create_arc(center, radius, end_angle, start_angle, clockwise=clockwise)
 
-        # 创建逆时针圆弧polyline
+        # 创建圆弧polyline
         lines = vtk.vtkCellArray()
         lines.InsertNextCell(points.GetNumberOfPoints())
         for i in range(points.GetNumberOfPoints()):
@@ -446,6 +436,69 @@ class Arc(CamvtkActor):
 
         self.mapper = vtk.vtkPolyDataMapper()
         self.mapper.SetInputData(self.pdata)
+        self.SetMapper(self.mapper)
+        self.SetColor(color)
+
+
+class Arcs(CamvtkActor):
+    """ circle"""
+
+    def __init__(self, points, color=(0, 1, 1)):
+        """ create circle """
+
+        def calculate_angle(center, point):
+            """
+            计算给定点相对于圆心的角度
+            """
+            dx = point[0] - center[0]
+            dy = point[1] - center[1]
+            return math.atan2(dy, dx)
+
+        def create_arc(center, radius, start_angle, end_angle, num_points=100, clockwise=True):
+            """
+            创建圆弧，顺时针或逆时针
+            """
+            points = vtk.vtkPoints()
+            if not clockwise:
+                if end_angle < start_angle:
+                    end_angle += 2 * vtk.vtkMath.Pi()
+            else:
+                if start_angle < end_angle:
+                    start_angle += 2 * vtk.vtkMath.Pi()
+
+            for i in range(num_points + 1):
+                angle = start_angle + (end_angle - start_angle) * (i / num_points)
+                x = center[0] + radius * math.cos(angle)
+                y = center[1] + radius * math.sin(angle)
+                points.InsertNextPoint(x, y, center[2])  # z = center[2]保持不变
+            return points
+
+        self.append_filter = vtk.vtkAppendPolyData()
+        for start_point, end_point, center_offset, clockwise in points:
+            radius = math.sqrt(center_offset[0] ** 2 + center_offset[1] ** 2)
+            center = (
+                start_point[0] + center_offset[0], start_point[1] + center_offset[1], start_point[2] + center_offset[2])
+
+            # 计算起始点和终止点相对于圆心的角度
+            start_angle = calculate_angle(center, start_point)  # 起始角度
+            end_angle = calculate_angle(center, end_point)  # 终止角度
+
+            points = create_arc(center, radius, end_angle, start_angle, clockwise=clockwise)
+
+            # 创建圆弧polyline
+            lines = vtk.vtkCellArray()
+            lines.InsertNextCell(points.GetNumberOfPoints())
+            for i in range(points.GetNumberOfPoints()):
+                lines.InsertCellPoint(i)
+
+            self.pdata = vtk.vtkPolyData()
+            self.pdata.SetPoints(points)
+            self.pdata.SetLines(lines)
+            self.append_filter.AddInputData(self.pdata)
+
+        self.append_filter.Update()
+        self.mapper = vtk.vtkPolyDataMapper()
+        self.mapper.SetInputData(self.append_filter.GetOutput())
         self.SetMapper(self.mapper)
         self.SetColor(color)
 
@@ -502,7 +555,6 @@ class Arrow(CamvtkActor):
         """ arrow """
         self.src = vtk.vtkArrowSource()
         # self.src.SetCenter(center)
-
         transform = vtk.vtkTransform()
         transform.Translate(center[0], center[1], center[2])
         transform.RotateX(rotXYZ[0])
@@ -593,7 +645,6 @@ class Axes(vtk.vtkActor):
         """ create axes """
         self.src = vtk.vtkAxes()
         # self.src.SetCenter(center)
-
         self.mapper = vtk.vtkPolyDataMapper()
         self.mapper.SetInputData(self.src.GetOutput())
         self.SetMapper(self.mapper)
