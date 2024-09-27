@@ -1,4 +1,4 @@
-import camvtk
+from src import camvtk
 import re
 
 with open("file/elephant.nc", "r") as f:
