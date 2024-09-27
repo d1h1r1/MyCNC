@@ -138,6 +138,9 @@ class VTKScreen():
     def AddLight(self, l):
         self.ren.AddLight(l)
 
+    def GetActors(self):
+        return self.ren.GetActors()
+
     def RemoveAllLights(self):
         self.ren.RemoveAllLights()
 
@@ -312,20 +315,52 @@ class Line(CamvtkActor):
 class Lines(CamvtkActor):
     """ lines """
 
-    def __init__(self, points, color=(0, 1, 1)):
+    def __init__(self, points, color=(0, 255, 255)):
         """ line """
         self.append_filter = vtk.vtkAppendPolyData()
+        self.colors = vtk.vtkUnsignedCharArray()
+        self.colors.SetNumberOfComponents(3)
+        self.colors.SetName("Colors")
+        self.line_sources = []
+
         for p1, p2 in points:
             line_source = vtk.vtkLineSource()
             line_source.SetPoint1(p1)
             line_source.SetPoint2(p2)
             line_source.Update()
+            self.line_sources.append(line_source)
+            # 为每段线段添加颜色
+            num_points = line_source.GetOutput().GetNumberOfPoints()
+            for _ in range(num_points):
+                self.colors.InsertNextTuple(color)
             self.append_filter.AddInputData(line_source.GetOutput())
+
         self.append_filter.Update()
+
+        output = self.append_filter.GetOutput()
+        output.GetPointData().SetScalars(self.colors)
+
         self.mapper = vtk.vtkPolyDataMapper()
         self.mapper.SetInputData(self.append_filter.GetOutput())
         self.SetMapper(self.mapper)
-        self.SetColor(color)
+        # self.SetColor(color)
+
+    def update_line_color(self, index, new_color):
+        """ 更新指定线段的颜色 """
+        if index < 0 or index >= len(self.line_sources):
+            print("索引超出范围")
+            return
+
+        line_source = self.line_sources[index]
+        num_points = line_source.GetOutput().GetNumberOfPoints()
+
+        # 更新颜色数组
+        start_idx = sum(self.line_sources[i].GetOutput().GetNumberOfPoints() for i in range(index))
+        for i in range(num_points):
+            self.colors.SetTuple(start_idx + i, new_color)
+
+        self.colors.Modified()
+        self.append_filter.Update()
 
 
 class Tube(CamvtkActor):
@@ -411,7 +446,7 @@ class Arc(CamvtkActor):
                 angle = start_angle + (end_angle - start_angle) * (i / num_points)
                 x = center[0] + radius * math.cos(angle)
                 y = center[1] + radius * math.sin(angle)
-                points.InsertNextPoint(x, y, center[2])  # z = center[2]保持不变
+                points.InsertNextPoint(x, y, center[2])
             return points
 
         radius = math.sqrt(center_offset[0] ** 2 + center_offset[1] ** 2)
