@@ -85,8 +85,9 @@ class VTKScreen():
         """ create a screen """
         self.width = width
         self.height = height
-
+        # 创建渲染器
         self.ren = vtk.vtkRenderer()
+        # 创建窗口接收渲染器
         self.renWin = vtk.vtkRenderWindow()
         self.renWin.AddRenderer(self.ren)
         self.renWin.SetSize(self.width, self.height)
