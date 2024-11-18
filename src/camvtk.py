@@ -105,10 +105,7 @@ class VTKScreen():
         self.camera.SetViewAngle(90)
         self.camera.SetViewUp(0, 0, 1)
         self.ren.SetActiveCamera(self.camera)
-        self.iren.Initialize()
-
-        # self.iren.AddObserver('TimerEvent', self.render)
-        # self.timer_id = self.iren.CreateRepeatingTimer(100)  # 每100毫秒渲染一次
+        # self.iren.Initialize()
 
     def setAmbient(self, r, g, b):
         """ set ambient color """

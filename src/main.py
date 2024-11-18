@@ -66,7 +66,6 @@ class draw:
 
 if __name__ == "__main__":
     arr = Array('i', range(1))
-    print(arr)
     obj = draw(arr)
     # threading.Thread(target=obj.run, args=()).start()
     Process(target=obj.run, args=()).start()
