@@ -1,6 +1,6 @@
 import re
 
-txt_dist = {"X": 0.0, "Y": 0.0, "Z": 0.0, "I": 0.0, "J": 0.0, "G": ""}
+txt_dist = {"X": 0.0, "Y": 0.0, "Z": 0.0, "I": 0.0, "J": 0.0, "G": "G00"}
 
 line_points = []
 arc_points = []
@@ -18,6 +18,8 @@ def get_points(file_path):
             result = {match[0]: float(match[1]) for match in matches}
             # 获取数据名称列表
             keys_list = result.keys()
+            if len(keys_list) == 0:
+                continue
             # 直线运动
             if "G00" in code or "G01" in code:
                 start_point = (txt_dist['X'], txt_dist['Y'], txt_dist['Z'])
