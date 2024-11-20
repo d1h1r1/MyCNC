@@ -31,6 +31,7 @@ rx_probe_command = [0, 1, "G91G38.2X-50F200\n", "G0X2\n", "G38.2X-3F30\n", "G0X2
 ony_probe_command = [0, 1, "G91G38.2Y-50F200\n", "G0Y2\n", "G38.2Y-3F30\n", "G0Y2F1000\n", "G90G01Z-3F1000\n"]
 undery_probe_command = [0, 1, "G91G38.2Y50F200\n", "G0Y-2\n", "G38.2Y3F30\n", "G0Y-2F1000\n", "G90G01Z-3F1000\n"]
 
+
 # time.sleep(3)
 #
 # data = ser.read_all()
@@ -375,15 +376,15 @@ if __name__ == '__main__':
             cv2.imshow("Camera", img)
 
             l_run_real = (
-            round((l_x - offset) * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
+                round((l_x - offset) * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
             r_run_real = (
-            round((r_x + offset) * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
+                round((r_x + offset) * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
             on_run_real = (
-            round((center_xy[0]) * scale + on_aruco[0], 3), round(on_aruco[1] - (on_y - offset) * scale, 3))
+                round((center_xy[0]) * scale + on_aruco[0], 3), round(on_aruco[1] - (on_y - offset) * scale, 3))
             under_run_real = (
-            round((center_xy[0]) * scale + on_aruco[0], 3), round(on_aruco[1] - (under_y + offset) * scale, 3))
+                round((center_xy[0]) * scale + on_aruco[0], 3), round(on_aruco[1] - (under_y + offset) * scale, 3))
             center_xy_real = (
-            round(center_xy[0] * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
+                round(center_xy[0] * scale + on_aruco[0], 3), round(on_aruco[1] - (center_xy[1]) * scale, 3))
             print(center_xy_real)
             print(l_run_real, r_run_real, on_run_real, under_run_real)
             threading.Thread(target=grbl_control).start()
