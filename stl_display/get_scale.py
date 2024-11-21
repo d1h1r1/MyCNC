@@ -32,19 +32,19 @@ def leftButtonPressEvent(obj, event):
         cutter.SetCutFunction(plane)
         cutter.Update()
 
-        # 映射交线数据
-        cutter_mapper = vtk.vtkPolyDataMapper()
-        cutter_mapper.SetInputConnection(cutter.GetOutputPort())
-
-        cutter_actor = vtk.vtkActor()
-        cutter_actor.SetMapper(cutter_mapper)
-        cutter_actor.GetProperty().SetColor(1, 0, 0)  # 红色表示平面的外轮廓线
-        cutter_actor.GetProperty().SetLineWidth(2)
-
-        # # 设置渲染器、渲染窗口和交互器
-        renderer.AddActor(cutter_actor)
-        # 开始渲染
-        renderWindow.Render()
+        # # 映射交线数据
+        # cutter_mapper = vtk.vtkPolyDataMapper()
+        # cutter_mapper.SetInputConnection(cutter.GetOutputPort())
+        #
+        # cutter_actor = vtk.vtkActor()
+        # cutter_actor.SetMapper(cutter_mapper)
+        # cutter_actor.GetProperty().SetColor(1, 0, 0)  # 红色表示平面的外轮廓线
+        # cutter_actor.GetProperty().SetLineWidth(2)
+        #
+        # # # 设置渲染器、渲染窗口和交互器
+        # renderer.AddActor(cutter_actor)
+        # # 开始渲染
+        # renderWindow.Render()
 
         cutter_output = cutter.GetOutput()
 
@@ -125,7 +125,7 @@ def leftButtonPressEvent(obj, event):
 
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
-stlReader.SetFileName("夹臂.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("elephant.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
 # 获取模型的 PolyData

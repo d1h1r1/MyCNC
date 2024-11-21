@@ -1,6 +1,7 @@
 import vtk
 import datetime
 import math
+from opencamlib import ocl, pyocl
 
 white = (1, 1, 1)
 black = (0, 0, 0)
@@ -85,27 +86,77 @@ class VTKScreen():
         """ create a screen """
         self.width = width
         self.height = height
-        # 创建渲染器
+
         self.ren = vtk.vtkRenderer()
-        # 创建窗口接收渲染器
         self.renWin = vtk.vtkRenderWindow()
         self.renWin.AddRenderer(self.ren)
         self.renWin.SetSize(self.width, self.height)
 
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetRenderWindow(self.renWin)
+        # interactorstyle = self.iren.GetInteractorStyle()
+        # interactorstyle.SetCurrentStyleToTrackballCamera()
 
-        interactorstyle = self.iren.GetInteractorStyle()
-        interactorstyle.SetCurrentStyleToTrackballCamera()
+        interactor_style = vtk.vtkInteractorStyleTrackballCamera()
 
-        self.camera = vtk.vtkCamera()
+        # 禁用默认鼠标左键旋转
+        interactor_style.SetCurrentRenderer(self.ren)
+        interactor_style.OnLeftButtonDown = lambda: None  # 取消左键事件
+        interactor_style.OnLeftButtonUp = lambda: None
+
+        # 将鼠标中键事件绑定为旋转
+        def rotate_with_middle_button():
+            interactor_style.StartRotate()
+
+        def end_rotate_with_middle_button():
+            interactor_style.EndRotate()
+
+        interactor_style.OnMiddleButtonDown = rotate_with_middle_button
+        interactor_style.OnMiddleButtonUp = end_rotate_with_middle_button
+
+        self.iren.SetInteractorStyle(interactor_style)
+
+        self.camera = self.ren.GetActiveCamera()
+
+        # 键盘事件的回调函数
+        def key_press_callback(obj, event):
+            key = obj.GetKeySym()
+            step = 10  # 平移步长
+            if key == "Up":
+                self.camera.SetPosition(self.camera.GetPosition()[0], self.camera.GetPosition()[1] + step,
+                                        self.camera.GetPosition()[2])
+                self.camera.SetFocalPoint(self.camera.GetFocalPoint()[0], self.camera.GetFocalPoint()[1] + step,
+                                          self.camera.GetFocalPoint()[2])
+            elif key == "Down":
+                self.camera.SetPosition(self.camera.GetPosition()[0], self.camera.GetPosition()[1] - step,
+                                        self.camera.GetPosition()[2])
+                self.camera.SetFocalPoint(self.camera.GetFocalPoint()[0], self.camera.GetFocalPoint()[1] - step,
+                                          self.camera.GetFocalPoint()[2])
+            elif key == "Left":
+                self.camera.SetPosition(self.camera.GetPosition()[0] - step, self.camera.GetPosition()[1],
+                                        self.camera.GetPosition()[2])
+                self.camera.SetFocalPoint(self.camera.GetFocalPoint()[0] - step, self.camera.GetFocalPoint()[1],
+                                          self.camera.GetFocalPoint()[2])
+            elif key == "Right":
+                self.camera.SetPosition(self.camera.GetPosition()[0] + step, self.camera.GetPosition()[1],
+                                        self.camera.GetPosition()[2])
+                self.camera.SetFocalPoint(self.camera.GetFocalPoint()[0] + step, self.camera.GetFocalPoint()[1],
+                                          self.camera.GetFocalPoint()[2])
+            elif key == "r":  # 重置视图
+                self.ren.ResetCamera()
+            self.renWin.Render()
+
+        # 绑定键盘事件
+        self.iren.AddObserver("KeyPressEvent", key_press_callback)
+
+        # self.camera = vtk.vtkCamera()
         self.camera.SetClippingRange(0.01, 1000)
-        self.camera.SetFocalPoint(0, 50, 0)
-        self.camera.SetPosition(0, 35, 5)
+        self.camera.SetFocalPoint(0, 0, 0)
+        self.camera.SetPosition(0, -35, 50)
         self.camera.SetViewAngle(90)
         self.camera.SetViewUp(0, 0, 1)
         self.ren.SetActiveCamera(self.camera)
-        # self.iren.Initialize()
+        self.iren.Initialize()
 
     def setAmbient(self, r, g, b):
         """ set ambient color """
@@ -833,3 +884,31 @@ class Plane(CamvtkActor):
         self.SetOrigin(center)
         # SetScaleFactor(double)
         # GetOrigin
+
+
+# TODO:
+# vtkArcSource
+# vtkDiskSource
+# vtkFrustumSource
+# vtkOutlineSource
+# vtkParametricFunctionSource
+# PlatonicSolid
+# ProgrammableSource (?)
+# PSphereSource
+# RegularPolygon
+
+#----------------------------------------------------------------
+
+#---- misc helper functions
+def vtkPolyData2OCLSTL(vtkPolyData,oclSTL):
+    """ read vtkPolyData and add each triangle to an ocl.STLSurf """
+    for cellId in range(0,vtkPolyData.GetNumberOfCells()):
+        cell = vtkPolyData.GetCell(cellId)
+        points = cell.GetPoints()
+        plist = []
+        for pointId in range(0,points.GetNumberOfPoints()):
+            vertex = points.GetPoint(pointId)
+            p = ocl.Point(vertex[0],vertex[1],vertex[2])
+            plist.append(p)
+        t = ocl.Triangle(plist[0],plist[1],plist[2])
+        oclSTL.addTriangle(t)
