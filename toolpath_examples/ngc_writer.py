@@ -7,7 +7,7 @@ feed = 200
 plunge_feed = 0
 metric = True
 
-f = open("test.nc", "w")
+f = open("../file/test.nc", "w")
 
 
 def line_to(x, y, z):
