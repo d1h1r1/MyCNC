@@ -371,7 +371,6 @@ class Lines(CamvtkActor):
         self.colors.SetNumberOfComponents(3)
         self.colors.SetName("Colors")
         self.line_sources = []
-
         for p1, p2 in points:
             line_source = vtk.vtkLineSource()
             line_source.SetPoint1(p1)
