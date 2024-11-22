@@ -17,7 +17,7 @@ class draw:
     def run(self):
 
         def change_color(obj, event):
-            if self.arr[0]:
+            if self.arr[0] or True:
                 print(self.num)
                 self.line_actors.update_line_color(self.num, (255, 0, 0))
                 self.num += 1
@@ -25,7 +25,7 @@ class draw:
                 self.arr[0] = 0
 
         self.myscreen = camvtk.VTKScreen()
-        line_points, arc_points = read_gcode.get_points("../file/master.nc")
+        line_points, arc_points = read_gcode.get_points("../file/elephant.nc")
         self.line_actors = camvtk.Lines(line_points)
         self.arc_actors = camvtk.Arcs(arc_points)
 
@@ -51,8 +51,9 @@ class draw:
         #     threading.Thread(target=change_color, args=()).start()
 
         # 设置一个计时器来触发颜色更改
-        # self.myscreen.iren.AddObserver('TimerEvent', change_color)
-        # timer_id = self.myscreen.iren.CreateRepeatingTimer(1)  # 每隔1ms触发一次
+        self.myscreen.iren.AddObserver('TimerEvent', change_color)
+        timer_id = self.myscreen.iren.CreateRepeatingTimer(1)  # 每隔1ms触发一次
+
         # myscreen.iren.AddObserver('KeyPressEvent', change_color_callback)
         # threading.Thread(target=change_color, args=()).start()
         # def trigger_custom_event():
@@ -72,5 +73,5 @@ if __name__ == "__main__":
     # Process(target=func, args=(obj,)).start()
     # while True:
     #     arr[0] = 1
-        # time.sleep(1)
+    #     time.sleep(1)
     # obj.flag = True
