@@ -1,6 +1,0 @@
-include README.rst
-include COPYING
-include pyproject.toml
-include setup.cfg
-include setup.py
-include docs/*.rst
