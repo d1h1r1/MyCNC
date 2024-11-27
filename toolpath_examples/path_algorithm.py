@@ -93,6 +93,34 @@ def SpiralPathOut(center_x, center_y, z_depth, max_radius, step_over, layer):
             paths.append(path)
     return paths
 
+"""
+螺旋路径1
+这种路径适用于需要处理圆形区域的情况，像是孔的加工或者从外向内的轮廓铣削。
+turns: 螺旋的圈数。
+segments: 每圈的分段数，总分段数为 turns * segments。
+从内到外
+"""
+
+
+def SpiralPath(center_x, center_y, z_depth, radius, layer):
+    angle_step = 2 * math.pi / 100  # 每个分段的角度增量
+    paths = []  # 存储路径点
+    dz = z_depth / layer
+    for i in range(1, layer + 1):
+        z = 0 + i * dz
+        path = ocl.Path()
+        for i in range(101):  # 101 点构成一圈
+            angle = i * angle_step  # 当前角度
+            x = center_x + radius * math.cos(angle)
+            y = center_y + radius * math.sin(angle)
+            p = ocl.Point(x, y, z)
+            if i > 0:  # 从第二个点开始创建线段
+                l = ocl.Line(prev_p, p)
+                path.append(l)
+            prev_p = p
+        paths.append(path)
+    return paths
+
 
 """
 螺旋路径2
@@ -144,7 +172,7 @@ def OffsetPath(polygon, diameter, z_depth, layer, step_over):
     mitre_limit = 5  # 默认是 5
 
     original_polygon = sg.Polygon(polygon)  # 输入多边形
-    cut_polygon = original_polygon.buffer(-diameter * 0.5 - 0.001, resolution=16, cap_style=cap_style, join_style=join_style, mitre_limit=mitre_limit)
+    cut_polygon = original_polygon.buffer(-diameter * 0.5 - 0.001, resolution=64, cap_style=cap_style, join_style=join_style, mitre_limit=mitre_limit)
 
     dz = z_depth / layer
     paths = []

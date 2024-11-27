@@ -364,7 +364,7 @@ class Line(CamvtkActor):
 class Lines(CamvtkActor):
     """ lines """
 
-    def __init__(self, points, color=(0, 255, 255)):
+    def __init__(self, points, color=(0, 255, 0)):
         """ line """
         self.append_filter = vtk.vtkAppendPolyData()
         self.colors = vtk.vtkUnsignedCharArray()

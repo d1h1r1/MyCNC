@@ -26,6 +26,7 @@ class draw:
 
         self.myscreen = camvtk.VTKScreen()
         line_points, arc_points = read_gcode.get_points("../file/elephant.nc")
+        print(line_points)
         self.line_actors = camvtk.Lines(line_points)
         self.arc_actors = camvtk.Arcs(arc_points)
 

@@ -125,7 +125,7 @@ def leftButtonPressEvent(obj, event):
 
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
-stlReader.SetFileName("../file/elephant_left.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("../file/left_elephant2.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
 # 获取模型的 PolyData
