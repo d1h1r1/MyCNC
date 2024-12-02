@@ -70,14 +70,16 @@ def leftButtonPressEvent(obj, event):
 
             # 当前分量数据
             region_polydata = connectivity_filter.GetOutput()
+
             bounds = [0.0] * 6
             region_polydata.GetCellsBounds(bounds)
+            # print(bounds)
             # print(f"Xmin, Xmax: ({bounds[0]}, {bounds[1]})")
             # print(f"Ymin, Ymax: ({bounds[2]}, {bounds[3]})")
             # print(f"Zmin, Zmax: ({bounds[4]}, {bounds[5]})")
             distance = (bounds[0] - pick_pos[0]) ** 2 + (bounds[2] - pick_pos[1]) ** 2
             if distance < min_distance:
-                print(distance)
+                # print(distance)
                 min_distance = distance
                 closest_curve = vtk.vtkPolyData()
                 closest_curve.DeepCopy(region_polydata)
@@ -125,7 +127,8 @@ def leftButtonPressEvent(obj, event):
 
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
-stlReader.SetFileName("../file/left_elephant2.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
+# stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
 # 获取模型的 PolyData
