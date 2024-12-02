@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js 2D Plane Dragging and Zooming</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "../node_modules/three/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r133/three.module.js';
+        import { SVGLoader } from '../node_modules/three/examples/jsm/loaders/SVGLoader.js';
+
+        // 场景和相机设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(
+            -window.innerWidth / 2, window.innerWidth / 2, 
+            window.innerHeight / 2, -window.innerHeight / 2, 
+            1, 1000
+        );
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 加载 SVG 文件
+        const loader = new SVGLoader();
+        const svgURL = '../file/phone.svg'; // 这里替换成你自己的SVG文件路径
+
+        loader.load(svgURL, function (data) {
+            const paths = data.paths;
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x00FF00, // 设置填充颜色
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+
+            paths.forEach((path) => {
+                const shapes = path.toShapes(true);
+                shapes.forEach((shape) => {
+                    const geometry = new THREE.ShapeGeometry(shape);
+                    const mesh = new THREE.Mesh(geometry, material);
+                    scene.add(mesh);
+                });
+            });
+
+            // 将 SVG 的位置进行调整
+            scene.position.x = -100;
+            scene.position.y = 100;
+
+            // 相机位置
+            camera.position.z = 500;
+
+            animate();
+        });
+
+        // 动画函数
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // 窗口大小变化时更新渲染器和相机
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.left = -window.innerWidth / 2;
+            camera.right = window.innerWidth / 2;
+            camera.top = window.innerHeight / 2;
+            camera.bottom = -window.innerHeight / 2;
+            camera.updateProjectionMatrix();
+        });
+
+        // 鼠标拖动平移
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        window.addEventListener('mousedown', (event) => {
+            isDragging = true;
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            if (isDragging) {
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+
+                // 平移相机，保持拖动的平面
+                camera.position.x -= deltaX / 3;
+                camera.position.y += deltaY / 3;  // Y 轴相反以符合常规的屏幕坐标系统
+
+                // 更新相机的矩阵
+                camera.updateProjectionMatrix();
+            }
+
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // 鼠标滚轮缩放
+        window.addEventListener('wheel', (event) => {
+            // 缩放因子
+            const zoomFactor = 1.05;
+
+            if (event.deltaY < 0) {
+                // 放大
+                camera.zoom *= zoomFactor;
+            } else {
+                // 缩小
+                camera.zoom /= zoomFactor;
+            }
+
+            // 限制缩放范围
+            camera.zoom = Math.max(1, Math.min(100, camera.zoom));
+
+            // 更新相机的投影矩阵
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
