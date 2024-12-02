@@ -94,11 +94,7 @@ def SpiralPathOut(center_x, center_y, z_depth, max_radius, step_over, layer):
     return paths
 
 """
-螺旋路径1
-这种路径适用于需要处理圆形区域的情况，像是孔的加工或者从外向内的轮廓铣削。
-turns: 螺旋的圈数。
-segments: 每圈的分段数，总分段数为 turns * segments。
-从内到外
+圆形路径
 """
 
 
@@ -119,6 +115,35 @@ def SpiralPath(center_x, center_y, z_depth, radius, layer):
                 path.append(l)
             prev_p = p
         paths.append(path)
+    return paths
+
+
+"""
+环形路径
+"""
+
+
+def SpiralPathPart(center_x, center_y, z_depth, min_radius, max_radius, step_over, layer):
+    angle_step = 2 * math.pi / 100  # 每个分段的角度增量
+    paths = []  # 存储路径点
+    num_turns = ((max_radius - min_radius) // step_over) + 1
+    # print(num_turns)
+    dz = z_depth / layer
+    for i in range(1, layer + 1):
+        z = 0 + i * dz
+        for turn in range(int(num_turns)):
+            path = ocl.Path()
+            for i in range(101):  # 101 点构成一圈
+                angle = i * angle_step  # 当前角度
+                radius = turn * step_over + min_radius  # 半径逐渐增大
+                x = center_x + radius * math.cos(angle)
+                y = center_y + radius * math.sin(angle)
+                p = ocl.Point(x, y, z)
+                if i > 0:  # 从第二个点开始创建线段
+                    l = ocl.Line(prev_p, p)
+                    path.append(l)
+                prev_p = p
+            paths.append(path)
     return paths
 
 

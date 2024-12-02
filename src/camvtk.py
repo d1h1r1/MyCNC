@@ -97,24 +97,24 @@ class VTKScreen():
         # interactorstyle = self.iren.GetInteractorStyle()
         # interactorstyle.SetCurrentStyleToTrackballCamera()
 
-        interactor_style = vtk.vtkInteractorStyleTrackballCamera()
+        self.interactor_style = vtk.vtkInteractorStyleTrackballCamera()
 
         # 禁用默认鼠标左键旋转
-        interactor_style.SetCurrentRenderer(self.ren)
-        interactor_style.OnLeftButtonDown = lambda: None  # 取消左键事件
-        interactor_style.OnLeftButtonUp = lambda: None
+        self.interactor_style.SetCurrentRenderer(self.ren)
+        self.interactor_style.OnLeftButtonDown = lambda: None  # 取消左键事件
+        self.interactor_style.OnLeftButtonUp = lambda: None
 
         # 将鼠标中键事件绑定为旋转
         def rotate_with_middle_button():
-            interactor_style.StartRotate()
+            self.interactor_style.StartRotate()
 
         def end_rotate_with_middle_button():
-            interactor_style.EndRotate()
+            self.interactor_style.EndRotate()
 
-        interactor_style.OnMiddleButtonDown = rotate_with_middle_button
-        interactor_style.OnMiddleButtonUp = end_rotate_with_middle_button
+        self.interactor_style.OnMiddleButtonDown = rotate_with_middle_button
+        self.interactor_style.OnMiddleButtonUp = end_rotate_with_middle_button
 
-        self.iren.SetInteractorStyle(interactor_style)
+        self.iren.SetInteractorStyle(self.interactor_style)
 
         self.camera = self.ren.GetActiveCamera()
 
