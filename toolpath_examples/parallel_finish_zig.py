@@ -460,7 +460,7 @@ if __name__ == "__main__":
 
     # paths = path_algorithm.YdirectionZigPath(xmin, xmax, ymin, ymax, -2, Ny, 4)  # 单向锯齿
     # paths = path_algorithm.YdirectionAlternatingZigPath(xmin, xmax, ymin, ymax, -2, Ny, 4)  # 双向锯齿
-    paths = path_algorithm.SpiralPathOut(0, 0, -10, 75, 1, 10)  # 螺旋路径1，从内到外
+    paths = path_algorithm.SpiralPathOut(0, 0, -10, 75, 5, 1)  # 螺旋路径1，从内到外
     # # paths = path_algorithm.SpiralPathIn(-106, 93, -2, 10, 1, 2)  # 螺旋路径2，从外向内, 不连续圆
     # paths = path_algorithm.OffsetPath(f, diameter, -3, layer, step_over)  # 平行偏移路径
     # # paths = path_algorithm.ContourPath(ef, diameter, z_depth, layer)  # 曲线跟随

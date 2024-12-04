@@ -41,7 +41,12 @@
 
             // 重新渲染 Canvas
             canvas.renderAll();
+            const objectsOnCanvas = canvas.getObjects();
+            for (let i = 0; i < objectsOnCanvas.length; i++) {
+                console.log(objectsOnCanvas[i]);
+            }
         });
+
     </script>
 </body>
 </html>
