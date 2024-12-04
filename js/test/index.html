@@ -21,32 +21,69 @@
 </head>
 <body>
     <!-- 创建一个 HTML canvas -->
-    <canvas id="myCanvas" width="800" height="600"></canvas>
+    <canvas id="myCanvas" width="1800" height="800"></canvas>
 
     <script>
         // 创建 Fabric.js Canvas 实例
         const canvas = new fabric.Canvas('myCanvas');
-
+        var index = 100;
         // 加载 SVG 文件并解析
         fabric.loadSVGFromURL('phone.svg', function(objects, options) {
-            // 将解析后的 SVG 对象合并为一个组
-            const svgGroup = fabric.util.groupSVGElements(objects, options);
-
-            // 将该组添加到 Canvas 上
-            canvas.add(svgGroup);
-
-            // 可选：调整大小
-            svgGroup.scaleToWidth(300);
-            svgGroup.scaleToHeight(300);
-
+            // 直接将每个独立的对象添加到 Canvas
+            // console.log(objects);
+            objects.forEach(function(obj) {
+                // 确保每个对象是独立的，并将其添加到 Canvas 上
+                const path = new fabric.Path(obj.path);
+                // const path = obj;
+                console.log(path.left, path.top);
+                
+                path.set({
+                    left: path.left * 10,  // x
+                    top: path.top * 10,    // y
+                    stroke: "rgba(0,0,0,1)",  // 边框颜色，透明度
+                    strokeWidth: 0.1,      // 边框的宽度
+                    fill: "rgba(0, 0, 0, 0)",                // 内部的填充颜色，透明度
+                    scaleX: 10,         // x放大倍数
+                    scaleY: 10          // y放大倍数
+                });
+                index += 1;
+                canvas.add(path);
+                // canvas.renderAll();
+            });
+            // console.log(canvas.item(2));
+            // console.log(canvas.getObjects());
             // 重新渲染 Canvas
             canvas.renderAll();
-            const objectsOnCanvas = canvas.getObjects();
-            for (let i = 0; i < objectsOnCanvas.length; i++) {
-                console.log(objectsOnCanvas[i]);
-            }
         });
 
+        // 鼠标滚轮事件：通过滚轮缩放图形
+        canvas.on('mouse:wheel', function(event) {
+            event.e.preventDefault(); // 阻止默认滚轮事件
+
+            // 获取滚轮的方向
+            const delta = event.e.deltaY;
+
+            // 获取当前图形的缩放比例
+            const activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                let scaleFactor = activeObject.scaleX;
+
+                // 根据滚轮的方向调整缩放比例
+                if (delta < 0) {
+                    // 放大
+                    scaleFactor *= 1.1;
+                } else {
+                    // 缩小
+                    scaleFactor *= 0.9;
+                }
+
+                // 应用新的缩放比例
+                activeObject.set({ scaleX: scaleFactor, scaleY: scaleFactor });
+
+                // 更新 Canvas
+                canvas.renderAll();
+            }
+        });
     </script>
 </body>
 </html>
