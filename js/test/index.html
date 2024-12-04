@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fabric.js SVG Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <!-- 创建一个 HTML canvas -->
+    <canvas id="myCanvas" width="800" height="600"></canvas>
+
+    <script>
+        // 创建 Fabric.js Canvas 实例
+        const canvas = new fabric.Canvas('myCanvas');
+
+        // 加载 SVG 文件并解析
+        fabric.loadSVGFromURL('phone.svg', function(objects, options) {
+            // 将解析后的 SVG 对象合并为一个组
+            const svgGroup = fabric.util.groupSVGElements(objects, options);
+
+            // 将该组添加到 Canvas 上
+            canvas.add(svgGroup);
+
+            // 可选：调整大小
+            svgGroup.scaleToWidth(300);
+            svgGroup.scaleToHeight(300);
+
+            // 重新渲染 Canvas
+            canvas.renderAll();
+        });
+    </script>
+</body>
+</html>

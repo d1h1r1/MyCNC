@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "fabric": "^6.5.1",
     "three": "^0.171.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.2"
   }
 }
