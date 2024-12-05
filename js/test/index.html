@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fabric.js SVG Example</title>
+    <title>Fabric test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <style>
         body {
@@ -15,18 +15,28 @@
             margin: 0;
         }
         canvas {
-            border: 1px solid #ccc;
+            border: 1px solid black;
         }
     </style>
 </head>
 <body>
     <!-- 创建一个 HTML canvas -->
-    <canvas id="myCanvas" width="1800" height="800"></canvas>
+    <!-- <div>
+        <input type="file" id="fileinput" style={styles.fileInput}/>
+    </div> -->
+    <div>
+        <canvas id="myCanvas" width="1000" height="600"></canvas>
+    </div>
+
 
     <script>
         // 创建 Fabric.js Canvas 实例
         const canvas = new fabric.Canvas('myCanvas');
-        var index = 100;
+
+        let undoStack = [];
+        let redoStack = [];
+        var flag = false;
+
         // 加载 SVG 文件并解析
         fabric.loadSVGFromURL('phone.svg', function(objects, options) {
             // 直接将每个独立的对象添加到 Canvas
@@ -34,24 +44,21 @@
             objects.forEach(function(obj) {
                 // 确保每个对象是独立的，并将其添加到 Canvas 上
                 const path = new fabric.Path(obj.path);
-                // const path = obj;
-                console.log(path.left, path.top);
-                
+                // console.log(obj.left, obj.top, obj.stroke, obj.strokeWidth, obj.fill, obj.scaleX, obj.scaleY);
+                // path.set(obj);
+                const scale = 20;
                 path.set({
-                    left: path.left * 10,  // x
-                    top: path.top * 10,    // y
+                    left: path.left * scale + 100,  // x
+                    top: path.top * scale + 100,    // y
                     stroke: "rgba(0,0,0,1)",  // 边框颜色，透明度
                     strokeWidth: 0.1,      // 边框的宽度
                     fill: "rgba(0, 0, 0, 0)",                // 内部的填充颜色，透明度
-                    scaleX: 10,         // x放大倍数
-                    scaleY: 10          // y放大倍数
+                    scaleX: scale,         // x放大倍数
+                    scaleY: scale          // y放大倍数
                 });
-                index += 1;
+                // console.log(path.left, path.top, path.stroke, path.strokeWidth, path.fill, path.scaleX, path.scaleY);
                 canvas.add(path);
-                // canvas.renderAll();
             });
-            // console.log(canvas.item(2));
-            // console.log(canvas.getObjects());
             // 重新渲染 Canvas
             canvas.renderAll();
         });
@@ -84,6 +91,77 @@
                 canvas.renderAll();
             }
         });
+
+        const updateCanvasSize = () => {
+            const clientWidth = window.innerWidth;
+            const clientHeight = window.innerHeight;
+            canvas.setWidth(clientWidth - 50);
+            canvas.setHeight(clientHeight -50); // 24为上传svg的input高度
+            canvas.renderAll();
+        };
+
+        updateCanvasSize();
+        window.addEventListener("resize", updateCanvasSize);
+
+        // 撤回操作
+        function undo() {
+            if (undoStack.length > 0) {
+                flag = false;
+                // console.log(undoStack)
+                undoStack.pop();
+                const lastState = undoStack.slice(-1)[0];
+                // console.log(lastState);
+
+                redoStack.push(JSON.stringify(canvas));
+                const json = JSON.parse(lastState);
+                console.log(JSON.stringify(canvas));
+                canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
+                flag = true;
+            }
+        }
+
+        // 重做操作
+        function redo() {
+            // console.log(redoStack)
+            if (redoStack.length > 0) {
+                flag = false;
+                const lastState = redoStack.pop();
+                undoStack.push(JSON.stringify(canvas));
+                const json = JSON.parse(lastState);
+                console.log(json)
+                canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
+                flag = true;
+            }
+        }
+
+        // 监听按键事件来实现撤回和重做
+        document.addEventListener('keydown', function (e) {
+        // 如果按下Ctrl+Z，则撤回操作
+        if (e.ctrlKey && e.key === 'z') {
+            e.preventDefault();
+            undo(); // 调用撤回
+        }
+        
+        // 如果按下Ctrl+Y，则重做操作
+        if (e.ctrlKey && e.key === 'y') {
+            e.preventDefault();
+            redo(); // 调用重做
+        }
+        });
+
+        // 每次更新 canvas 时，记录当前状态
+        canvas.on('object:added', () => saveState());
+        canvas.on('object:removed', () => saveState());
+        canvas.on('object:modified', () => saveState());
+
+        flag = true;
+        function saveState() {
+            if (flag){
+                const json = JSON.stringify(canvas);
+                undoStack.push(json);
+                redoStack = []; // 清空重做栈
+            }
+        }
     </script>
 </body>
 </html>
