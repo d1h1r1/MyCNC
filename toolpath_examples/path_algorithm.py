@@ -74,7 +74,7 @@ segments: 每圈的分段数，总分段数为 turns * segments。
 def SpiralPathOut(center_x, center_y, z_depth, max_radius, step_over, layer):
     angle_step = 2 * math.pi / 100  # 每个分段的角度增量
     paths = []  # 存储路径点
-    num_turns = max_radius // step_over
+    num_turns = int(max_radius // step_over)
     dz = z_depth / layer
     for i in range(1, layer + 1):
         z = 0 + i * dz
@@ -126,7 +126,7 @@ def SpiralPath(center_x, center_y, z_depth, radius, layer):
 def SpiralPathPart(center_x, center_y, z_depth, min_radius, max_radius, step_over, layer):
     angle_step = 2 * math.pi / 100  # 每个分段的角度增量
     paths = []  # 存储路径点
-    num_turns = ((max_radius - min_radius) // step_over)
+    num_turns = int((max_radius - min_radius) // step_over)
     # print(num_turns)
     dz = z_depth / layer
     for i in range(1, layer + 1):
