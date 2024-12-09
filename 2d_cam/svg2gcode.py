@@ -1,5 +1,6 @@
+import re
+from xml.etree import ElementTree
 from svgpathtools import svg2paths
-import xml.etree.ElementTree as ET
 import numpy as np
 import math
 
@@ -95,7 +96,37 @@ def svgArcToCenterParam(x1, y1, rx, ry, phi, fA, fS, x2, y2):
     return outputObj
 
 
-def generate_arc_gcode(x1, y1, x2, y2 ,cx, cy, startAngle, endAngle, clockwise, feedrate=1000):
+def parse_transform(matrix, translate):
+    """
+    解析 SVG 中的 transform 属性（matrix 和 translate）。
+    例如: 'matrix(1, 0, 0, 1, 10, 20)' 或 'translate(10, 20)'。
+    """
+    transform_matrix = np.identity(3)  # 初始化为单位矩阵
+
+    # 处理 matrix 和 translate
+    matrix_match = re.match(r'matrix\(([^)]+)\)', matrix.strip())
+    if matrix_match:
+        # 解析 matrix
+        matrix_values = list(map(float, matrix_match.group(1).split()))
+        matrix = np.array(matrix_values).reshape((2, 3))  # 转换为 2x3 矩阵
+        transform_matrix[0, 0] = matrix[0, 0]
+        transform_matrix[0, 1] = matrix[0, 2]
+        transform_matrix[0, 2] = matrix[1, 1]
+        transform_matrix[1, 0] = matrix[0, 1]
+        transform_matrix[1, 1] = matrix[1, 0]
+        transform_matrix[1, 2] = matrix[1, 2]
+    translate_match = re.match(r'translate\(([^)]+)\)', str(translate).strip())
+    if translate_match:
+        # 解析 translate
+        tx, ty = map(float, translate_match.group(1).split(","))
+        # print(tx, ty)
+        transform_matrix[0, 2] += 2 * tx
+        transform_matrix[1, 2] += 2 * ty
+    # print(transform_matrix)
+    return transform_matrix
+
+
+def generate_arc_gcode(x1, y1, x2, y2, cx, cy, startAngle, endAngle, clockwise, feedrate=1000):
     # 如果是顺时针，使用 G2，否则使用 G3
     gcode_command = "G2" if clockwise else "G3"
 
@@ -105,7 +136,6 @@ def generate_arc_gcode(x1, y1, x2, y2 ,cx, cy, startAngle, endAngle, clockwise, 
         endAngle -= math.pi * 2
     while endAngle < 0:
         endAngle += math.pi * 2
-
 
     # G-code 中通常使用 X, Y 来指定圆弧的终点，I, J 来指定圆心的偏移量
     # I, J 是相对于起始点 (x1, y1) 的圆心偏移
@@ -154,11 +184,12 @@ def arc_to_gcode(start, end, rx, ry, x_rotation, large_arc_flag, sweep_flag, num
 def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
     num = 0
     paths, attributes = svg2paths(svg_file)
-    print(attributes)
-    tree = ET.parse(svg_file)
-    root = tree.getroot()
+    # print(attributes)
+    # tree = ElementTree.parse(svg_file)
+    root = ElementTree.parse(svg_file).getroot()
     namespace = {"svg": "http://www.w3.org/2000/svg"}
     matrix_list = []
+
     for path in root.findall(".//svg:g", namespace):
         matrix = path.attrib.get('transform')
         matrix_list.append(matrix)
@@ -166,70 +197,84 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
         # 写入 G-code 文件的头部
         gcode_file.write("G21\nG0 G17 G49 G80 G90\n")
         gcode_file.write(f"F{feed_rate} ; Set feed rate\n")
-
         # 遍历路径并转换为 G-code
         for path in paths:
-            matrix = matrix_list[num]
-            translate = attributes[num]['transform']
-            print(matrix, translate)
+            try:
+                matrix = matrix_list[num]
+                translate = attributes[num]['transform']
+                transform_matrix = parse_transform(matrix, translate)
+            except:
+                transform_matrix = np.identity(3)
             num += 1
             for segment in path:
-                # print(segment)
                 if segment.__class__.__name__ == 'Line':
-                    # 对于直线段，直接输出 G1 命令
-                    start = segment.start
-                    end = segment.end
-                    start_x = matrix[0] * start.real + matrix[2] * start.imag + matrix[4]
-                    start_y = matrix[1] * start.real + matrix[3] * start.imag + matrix[5]
-                    end_x = matrix[0] * end.real + matrix[2] * end.imag + matrix[4]
-                    end_y = matrix[1] * end.real + matrix[3] * end.imag + matrix[5]
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
+                    new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
+                    new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
 
-                    # 应用平移
-                    start_x += translate[0]
-                    start_y += translate[1]
-                    end_x += translate[0]
-                    end_y += translate[1]
-
-                    gcode_file.write(f"G0 X{start_x:.3f} Y{-start_y:.3f}\n")
-                    gcode_file.write(f"G1 X{end_x:.3f} Y{-end_y:.3f}\n")
+                    gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
+                    gcode_file.write(f"G1 X{new_end[0]:.3f} Y{-new_end[1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'CubicBezier':
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
+                    new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
+                    new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
+                    control1 = np.array([[segment.control1.real], [segment.control1.imag], [1]])
+                    new_control1 = np.dot(transform_matrix, control1)[0][0], np.dot(transform_matrix, control1)[1][0]
+                    control2 = np.array([[segment.control2.real], [segment.control2.imag], [1]])
+                    new_control2 = np.dot(transform_matrix, control2)[0][0], np.dot(transform_matrix, control2)[1][0]
+
                     # 对于三次贝塞尔曲线，使用插值法转换为直线段
-                    gcode_file.write(f"G0 X{segment.start.real:.3f} Y{-segment.start.imag:.3f}\n")
+                    gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
                     points = interpolate_bezier(
-                        (segment.start.real, -segment.start.imag),
-                        (segment.control1.real, -segment.control1.imag),
-                        (segment.control2.real, -segment.control2.imag),
-                        (segment.end.real, -segment.end.imag),
+                        (new_start[0], -new_start[1]),
+                        (new_control1[0], -new_control1[1]),
+                        (new_control2[0], -new_control2[1]),
+                        (new_end[0], -new_end[1]),
                         num_points
                     )
                     for i in range(1, len(points)):
                         gcode_file.write(f"G1 X{points[i][0]:.3f} Y{points[i][1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'QuadraticBezier':
-                    gcode_file.write(f"G0 X{segment.start.real:.3f} Y{-segment.start.imag:.3f}\n")
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
+                    new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
+                    new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
+                    control = np.array([[segment.control.real], [segment.control.imag], [1]])
+                    new_control = np.dot(transform_matrix, control)[0][0], np.dot(transform_matrix, control)[1][0]
+
+                    gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
                     # 对于二次贝塞尔曲线，使用插值法转换为直线段
                     points = interpolate_bezier(
-                        (segment.start.real, -segment.start.imag),
-                        (segment.control.real, -segment.control.imag),
-                        (segment.end.real, -segment.end.imag),
+                        (new_start[0], -new_start[1]),
+                        (new_control[0], -new_control[1]),
+                        (new_end[0], -new_end[1]),
                         num_points
                     )
                     for i in range(1, len(points)):
                         gcode_file.write(f"G1 X{points[i][0]:.3f} Y{points[i][1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'Arc':
-                    gcode_file.write(f"G0 X{segment.start.real:.3f} Y{-segment.start.imag:.3f}\n")
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
+                    new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
+                    new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
+
+                    gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
                     # 对于圆弧路径，转换为 G2/G3 命令
-                    start = (segment.start.real, -segment.start.imag)
+                    start = (new_start[0], -new_start[1])
                     # gcode_file.write(f"G0 X{segment.start.real:.3f} Y{segment.start.imag:.3f}\n")
-                    end = (segment.end.real, -segment.end.imag)
+                    end = (new_end[0], -new_end[1])
                     rx = -segment.radius.real
                     ry = -segment.radius.imag
                     x_rotation = segment.rotation
                     large_arc_flag = not segment.large_arc
                     sweep_flag = segment.sweep
-                    a = svgArcToCenterParam(start[0], start[1], rx, ry, x_rotation, large_arc_flag, sweep_flag, end[0], end[1])
+                    a = svgArcToCenterParam(start[0], start[1], rx, ry, x_rotation, large_arc_flag, sweep_flag, end[0],
+                                            end[1])
 
                     # 示例调用
                     x1, y1 = start  # 起始点
@@ -253,5 +298,5 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
 
 # 使用示例
 # svg_to_gcode('../file/logo.svg', 'output.nc')
-# svg_to_gcode('../file/phone.svg', 'output.nc')
-svg_to_gcode('image.svg', 'output.nc')
+svg_to_gcode('../file/phone.svg', 'output.nc')
+# svg_to_gcode('image.svg', 'output.nc')

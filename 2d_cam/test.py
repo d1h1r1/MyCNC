@@ -1,64 +1,11 @@
-from svgpathtools import svg2paths, Arc, Line
+from svg_to_gcode.svg_parser import parse_file
+from svg_to_gcode.compiler import Compiler, interfaces
 
-# 1. 解析 SVG 文件
-svg_file = '../file/phone.svg'
-paths, attributes = svg2paths(svg_file)
+# Instantiate a compiler, specifying the interface type and the speed at which the tool should move. pass_depth controls
+# how far down the tool moves after every pass. Set it to 0 if your machine does not support Z axis movement.
+gcode_compiler = Compiler(interfaces.Gcode, movement_speed=1000, cutting_speed=300, pass_depth=0)
 
-# 2. 将 SVG 路径转换为 pythreejs 路径
-threejs_paths = []
+curves = parse_file("image.svg", transform_origin=True)  # Parse an svg file into geometric curves
 
-for path in paths:
-    for segment in path:
-        print(segment)
-
-        # if isinstance(segment, Arc):
-        #     print("arc", segment)
-        #     start_x, start_y = segment.start.real, segment.start.imag
-        #     end_x, end_y = segment.end.real, segment.end.imag
-        #
-        #     # 计算圆心
-        #     # 需要根据弧的几何特性计算圆心，这里提供一个简单的方法
-        #     # 假设圆心在 x, y 平面
-        #     center_x = (start_x + end_x) / 2
-        #     center_y = (start_y + end_y) / 2
-        #     if segment.sweep:
-        #         pass
-        # elif isinstance(segment, Line):
-        #     print("line", segment)
-        # else:
-        #     continue
-        # print(i.start)
-        # start_points = np.array([[segment.start.real, segment.start.imag] for segment in path])
-        # print(start_points)
-        # end_points = np.array([[segment.end.real, segment.end.imag] for segment in path])
-        # print(end_points)
-        print("=================================================")
-#     # 将每个 SVG 路径转换为 three.js 路径
-#     points = np.array([[segment.start.real, segment.start.imag] for segment in path])
-#     path_geometry = p3.Geometry(vertices=[p3.Vector3(*point) for point in points])
-#     threejs_paths.append(path_geometry)
-#
-# # 3. 创建 three.js 场景
-# scene = p3.Scene(children=[
-#     p3.AmbientLight(intensity=0.5),
-#     p3.DirectionalLight(position=[3, 5, 1], intensity=0.7),
-# ])
-#
-# # 4. 将路径添加到场景中
-# path_meshes = []
-#
-# for geometry in threejs_paths:
-#     material = p3.LineBasicMaterial(color='red')
-#     mesh = p3.Line(geometry=geometry, material=material)
-#     path_meshes.append(mesh)
-#
-# scene.add(*path_meshes)
-#
-# # 5. 设置相机
-# camera = p3.PerspectiveCamera(position=[0, 0, 5], lookAt=[0, 0, 0])
-#
-# # 6. 创建渲染器
-# renderer = p3.WebGLRenderer(camera=camera, scene=scene, width=800, height=600)
-#
-# # 7. 渲染
-# renderer
+gcode_compiler.append_curves(curves)
+gcode_compiler.compile_to_file("drawing.gcode", passes=1)
