@@ -69,8 +69,8 @@ def filter_path(path, tol):
     f = ocl.LineCLFilter()
     f.setTolerance(tol)
     for p in path:
-        if p.z == 0:
-            continue
+        # if p.z == 0:
+        #     continue
         p2 = ocl.CLPoint(p.x, p.y, p.z)
         f.addCLPoint(p2)
     f.run()
@@ -242,7 +242,7 @@ def vtk_all(stlfile, toolpaths):
                 pos = ocl.Point(first_pt.x, first_pt.y,
                                 first_pt.z)
                 first = False
-                # else:
+            else:
                 # 回到进给高度
                 myscreen.addActor(
                     camvtk.Line(p1=(pos.x, pos.y, pos.z), p2=(pos.x, pos.y, feed_height), color=plungeColor))
@@ -371,13 +371,13 @@ def tool_threading(radius, shared_dict):
 
 def tool_layer(radius, num, processes_num, shared_dict):
     # stlfile = "../file/coin_half.stl"
-    diameter = 1.5
+    diameter = 6
     length = 8
     simplify_file = 'simplified_model.stl'
     surface = STLSurfaceSource(simplify_file)
-    # angle = math.pi / 6
-    # cutter = ocl.ConeCutter(diameter, angle, length)  # 锥形刀
-    cutter = ocl.CylCutter(diameter, length)          # 平底刀
+    angle = math.pi / 6
+    cutter = ocl.ConeCutter(diameter, angle, length)  # 锥形刀
+    # cutter = ocl.CylCutter(diameter, length)          # 平底刀
 
     min_radius = radius * ((num - 1) / processes_num)
     max_radius = radius * (num / processes_num)
@@ -385,7 +385,7 @@ def tool_layer(radius, num, processes_num, shared_dict):
     # print("num2", (num / processes_num))
     # print("min_radius", min_radius)
     # print("max_radius", max_radius)
-    paths = path_algorithm.SpiralPathPart(0, 0, -10, min_radius, max_radius, 0.5, 1)  # 螺旋路径1，从内到外
+    paths = path_algorithm.SpiralPathPart(0, 0, -4, min_radius, max_radius, 1, 2)  # 螺旋路径1，从内到外
     (raw_toolpath, n_raw) = adaptive_path_drop_cutter(surface, cutter, paths)
     (toolpaths, n_filtered) = filterCLPaths(raw_toolpath, tolerance=0.001)
     toolpaths_list = []
@@ -427,8 +427,10 @@ def simplify_stl_quadratic(input_file, output_file, target_reduction=0.5):
 
 if __name__ == "__main__":
     # stlfile = "../file/elephant.stl"
-    stlfile = "../file/Throwing.stl"
+    # stlfile = "../file/Throwing.stl"
+    # stlfile = "../file/myhand.stl"
     # stlfile = "../file/coin_half.stl"
+    stlfile = "../file/modified_model.stl"
     # stlfile = "../file/left_elephant2.stl"
     ymin = -75
     ymax = 75
@@ -436,7 +438,7 @@ if __name__ == "__main__":
     xmax = 50
     z_depth = -1
     Ny = 20
-    layer = 5
+    layer = 1
     step_over = 1
     diameter = 3
     length = 8
@@ -450,7 +452,7 @@ if __name__ == "__main__":
 
     # corner_radius = 0.05
     # cutter = ocl.BullCutter(diameter, 0.2, length)        # 环形刀
-    # angle = math.pi/4
+    # angle = math.pi/3
     # cutter = ocl.ConeCutter(diameter, angle, length)      # 锥形刀
     # cutter = cutter.offsetCutter(0.4)
 
@@ -460,19 +462,19 @@ if __name__ == "__main__":
 
     # paths = path_algorithm.YdirectionZigPath(xmin, xmax, ymin, ymax, -2, Ny, 4)  # 单向锯齿
     # paths = path_algorithm.YdirectionAlternatingZigPath(xmin, xmax, ymin, ymax, -2, Ny, 4)  # 双向锯齿
-    paths = path_algorithm.SpiralPathOut(0, 0, -10, 75, 5, 1)  # 螺旋路径1，从内到外
+    # paths = path_algorithm.SpiralPathOut(0, 0, -10, 73, 0.5, 10)  # 螺旋路径1，从内到外
     # # paths = path_algorithm.SpiralPathIn(-106, 93, -2, 10, 1, 2)  # 螺旋路径2，从外向内, 不连续圆
-    # paths = path_algorithm.OffsetPath(f, diameter, -3, layer, step_over)  # 平行偏移路径
+    # paths = path_algorithm.OffsetPath(f, diameter, -3, layer, step_over)  # 轮廓内部切割路径
     # # paths = path_algorithm.ContourPath(ef, diameter, z_depth, layer)  # 曲线跟随
     # # paths = path_algorithm.SpiralPath(0, 0, -3, 10, 1)  # 画圆
     s = time.time()
     print(s)
-    (raw_toolpath, n_raw) = adaptive_path_drop_cutter(surface, cutter, paths)
-    s1 = time.time()
-    print(s1 - s)
-    (toolpaths, n_filtered) = filterCLPaths(raw_toolpath, tolerance=0.001)
-    write_zig_gcode_file(stlfile, surface.size(), 0, n_raw, 0.001, 0, 0, toolpaths)
-    vtk_all(simplify_file, toolpaths)
+    # (raw_toolpath, n_raw) = adaptive_path_drop_cutter(surface, cutter, paths)
+    # s1 = time.time()
+    # print(s1 - s)
+    # (toolpaths, n_filtered) = filterCLPaths(raw_toolpath, tolerance=0.001)
+    # write_zig_gcode_file(stlfile, surface.size(), 0, n_raw, 0.001, 0, 0, toolpaths)
+    # vtk_all(simplify_file, toolpaths)
 
     # pool = ThreadPool(20)  # 使用线程池
     # tasks = [i for i in range(1, 76)]
@@ -499,16 +501,16 @@ if __name__ == "__main__":
     #         for i in range(1, 76):
     #             shared_list.append(shared_dict[i])
 
-    # processes_num = 8
-    # radius = 75
-    # shared_list = []
-    # with multiprocessing.Pool(processes=processes_num) as pool:
-    #     with multiprocessing.Manager() as manager:
-    #         shared_dict = manager.dict()
-    #         results = pool.starmap(tool_layer, [[radius, num, processes_num, shared_dict] for num in range(1, processes_num + 1)])
-    #         for i in range(1, processes_num + 1):
-    #             shared_list.append(shared_dict[i])
-    # s1 = time.time()
-    # print(s1 - s)
-    # gcode_file(shared_list)
-    # vtk_layer(simplify_file, shared_list)
+    processes_num = 4
+    radius = 73
+    shared_list = []
+    with multiprocessing.Pool(processes=processes_num) as pool:
+        with multiprocessing.Manager() as manager:
+            shared_dict = manager.dict()
+            results = pool.starmap(tool_layer, [[radius, num, processes_num, shared_dict] for num in range(1, processes_num + 1)])
+            for i in range(1, processes_num + 1):
+                shared_list.append(shared_dict[i])
+    s1 = time.time()
+    print(s1 - s)
+    gcode_file(shared_list)
+    vtk_layer(simplify_file, shared_list)

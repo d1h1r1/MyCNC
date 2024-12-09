@@ -36,11 +36,11 @@
         let undoStack = [];
         let redoStack = [];
         var flag = false;
-
+        
         // 加载 SVG 文件并解析
         fabric.loadSVGFromURL('phone.svg', function(objects, options) {
             // 直接将每个独立的对象添加到 Canvas
-            // console.log(objects);
+            console.log(objects);
             objects.forEach(function(obj) {
                 // 确保每个对象是独立的，并将其添加到 Canvas 上
                 const path = new fabric.Path(obj.path);

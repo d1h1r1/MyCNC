@@ -1,6 +1,7 @@
 import vtk
 from svgpathtools import svg2paths
 
+
 class DraggableInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     def __init__(self, actors):
         self.actors = actors

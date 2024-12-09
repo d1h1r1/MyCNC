@@ -901,13 +901,13 @@ class Plane(CamvtkActor):
 #---- misc helper functions
 def vtkPolyData2OCLSTL(vtkPolyData,oclSTL):
     """ read vtkPolyData and add each triangle to an ocl.STLSurf """
-    for cellId in range(0,vtkPolyData.GetNumberOfCells()):
+    for cellId in range(0, vtkPolyData.GetNumberOfCells()):
         cell = vtkPolyData.GetCell(cellId)
         points = cell.GetPoints()
         plist = []
-        for pointId in range(0,points.GetNumberOfPoints()):
+        for pointId in range(0, points.GetNumberOfPoints()):
             vertex = points.GetPoint(pointId)
-            p = ocl.Point(vertex[0],vertex[1],vertex[2])
+            p = ocl.Point(vertex[0], vertex[1], vertex[2])
             plist.append(p)
-        t = ocl.Triangle(plist[0],plist[1],plist[2])
+        t = ocl.Triangle(plist[0], plist[1], plist[2])
         oclSTL.addTriangle(t)
