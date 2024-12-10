@@ -108,21 +108,22 @@ def parse_transform(matrix, translate):
     if matrix_match:
         # 解析 matrix
         matrix_values = list(map(float, matrix_match.group(1).split()))
-        matrix = np.array(matrix_values).reshape((2, 3))  # 转换为 2x3 矩阵
-        transform_matrix[0, 0] = matrix[0, 0]
-        transform_matrix[0, 1] = matrix[0, 2]
-        transform_matrix[0, 2] = matrix[1, 1]
-        transform_matrix[1, 0] = matrix[0, 1]
-        transform_matrix[1, 1] = matrix[1, 0]
-        transform_matrix[1, 2] = matrix[1, 2]
+        # matrix = np.array(matrix_values).reshape((2, 3))  # 转换为 2x3 矩阵
+        transform_matrix = np.array([
+            [matrix_values[0], matrix_values[2], matrix_values[4]],
+            [matrix_values[1], matrix_values[3], matrix_values[5]],
+            [0, 0, 1],
+        ])
     translate_match = re.match(r'translate\(([^)]+)\)', str(translate).strip())
     if translate_match:
         # 解析 translate
         tx, ty = map(float, translate_match.group(1).split(","))
-        # print(tx, ty)
-        transform_matrix[0, 2] += 2 * tx
-        transform_matrix[1, 2] += 2 * ty
-    # print(transform_matrix)
+        translation_matrix = np.array([
+            [1, 0, tx],
+            [0, 1, ty],
+            [0, 0, 1]
+        ])
+        transform_matrix @= translation_matrix
     return transform_matrix
 
 
@@ -156,27 +157,6 @@ def interpolate_bezier(p0, p1, p2, p3, num_points=10):
         x = (1 - t) ** 3 * p0[0] + 3 * (1 - t) ** 2 * t * p1[0] + 3 * (1 - t) * t ** 2 * p2[0] + t ** 3 * p3[0]
         y = (1 - t) ** 3 * p0[1] + 3 * (1 - t) ** 2 * t * p1[1] + 3 * (1 - t) * t ** 2 * p2[1] + t ** 3 * p3[1]
         points.append((x, y))
-    return points
-
-
-# 计算圆弧的G2/G3命令
-def arc_to_gcode(start, end, rx, ry, x_rotation, large_arc_flag, sweep_flag, num_points=10):
-    # 将角度转换为弧度
-    sweep_flag = 1 if sweep_flag else 0
-    large_arc_flag = 1 if large_arc_flag else 0
-
-    # 计算圆心坐标（此方法有些复杂，需要根据起点、终点、旋转和标志计算圆心）
-    dx = end[0] - start[0]
-    dy = end[1] - start[1]
-    angle = math.atan2(dy, dx)
-
-    # 使用适当的公式将 arc 参数转换为 G2/G3
-    points = []
-    for t in np.linspace(0, 1, num_points):
-        x = start[0] + t * (end[0] - start[0])
-        y = start[1] + t * (end[1] - start[1])
-        points.append((x, y))
-
     return points
 
 
@@ -266,7 +246,6 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                     gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
                     # 对于圆弧路径，转换为 G2/G3 命令
                     start = (new_start[0], -new_start[1])
-                    # gcode_file.write(f"G0 X{segment.start.real:.3f} Y{segment.start.imag:.3f}\n")
                     end = (new_end[0], -new_end[1])
                     rx = -segment.radius.real
                     ry = -segment.radius.imag
@@ -283,14 +262,8 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                     startAngle = a['startAngle']  # 起始角度
                     endAngle = a['endAngle']  # 角度差
                     clockwise = a['clockwise']  # 顺时针
-
                     gcode = generate_arc_gcode(x1, y1, x2, y2, cx, cy, startAngle, endAngle, clockwise)
-                    # print(gcode)
                     gcode_file.write(gcode + "\n")
-                    # points = arc_to_gcode(start, end, rx, ry, x_rotation, large_arc_flag, sweep_flag, num_points)
-                    # # 输出圆弧的 G2/G3 命令
-                    # for point in points:
-                    #     gcode_file.write(f"G1 X{point[0]:.3f} Y{point[1]:.3f}\n")
 
         # 结束 G-code
         gcode_file.write("M30 ; End of program\n")
@@ -298,5 +271,5 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
 
 # 使用示例
 # svg_to_gcode('../file/logo.svg', 'output.nc')
-svg_to_gcode('../file/phone.svg', 'output.nc')
-# svg_to_gcode('image.svg', 'output.nc')
+# svg_to_gcode('../file/phone.svg', 'output.nc')
+svg_to_gcode('image6.svg', 'output.nc')
