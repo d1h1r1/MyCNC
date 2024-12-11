@@ -176,7 +176,7 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
     with open(output_file, 'w') as gcode_file:
         # 写入 G-code 文件的头部
         gcode_file.write("G21\nG0 G17 G49 G80 G90\n")
-        gcode_file.write(f"F{feed_rate} ; Set feed rate\n")
+        gcode_file.write(f"F{feed_rate}\n")
         # 遍历路径并转换为 G-code
         for path in paths:
             try:
@@ -255,7 +255,6 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                     a = svgArcToCenterParam(start[0], start[1], rx, ry, x_rotation, large_arc_flag, sweep_flag, end[0],
                                             end[1])
 
-                    # 示例调用
                     x1, y1 = start  # 起始点
                     x2, y2 = end
                     cx, cy = a['cx'], a['cy']  # 圆心
@@ -266,10 +265,10 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                     gcode_file.write(gcode + "\n")
 
         # 结束 G-code
-        gcode_file.write("M30 ; End of program\n")
+        gcode_file.write("M30\n")
 
 
 # 使用示例
 # svg_to_gcode('../file/logo.svg', 'output.nc')
 # svg_to_gcode('../file/phone.svg', 'output.nc')
-svg_to_gcode('image6.svg', 'output.nc')
+svg_to_gcode('image8.svg', 'output.nc')

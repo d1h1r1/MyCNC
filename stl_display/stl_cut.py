@@ -5,9 +5,9 @@ from vtkmodules.vtkRenderingCore import vtkPolyDataMapper, vtkActor
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
 # stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
-# stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
 # stlReader.SetFileName("../file/myhand.stl")  # 替换为你的 STL 文件路径
-stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
+# stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
 # 获取模型的 PolyData
@@ -84,7 +84,7 @@ def key_press_callback(obj, event):
 interactor.AddObserver("KeyPressEvent", key_press_callback)
 
 normal = [0.0, 0.0, 1.0]  # 平行于 XY 平面
-pick_pos = [-1000, 0, -1]
+pick_pos = [-1000, 0, -7]
 # 创建平面
 plane = vtk.vtkPlane()
 plane.SetOrigin(pick_pos)
@@ -95,6 +95,7 @@ cutter.SetInputData(stlReader.GetOutput())
 cutter.SetCutFunction(plane)
 cutter.Update()
 
+
 # 映射交线数据
 cutter_mapper = vtk.vtkPolyDataMapper()
 cutter_mapper.SetInputConnection(cutter.GetOutputPort())
@@ -103,7 +104,7 @@ cutter_actor = vtk.vtkActor()
 cutter_actor.SetMapper(cutter_mapper)
 cutter_actor.GetProperty().SetColor(1, 0, 0)  # 红色表示平面的外轮廓线
 cutter_actor.GetProperty().SetLineWidth(2)
-# # 设置渲染器、渲染窗口和交互器
+# 设置渲染器、渲染窗口和交互器
 # renderer.AddActor(cutter_actor)
 # # 开始渲染
 # renderWindow.Render()
@@ -147,6 +148,7 @@ for i in range(num_regions):
 # 渲染最近的封闭曲线
 if closest_curve.GetNumberOfPoints() > 0:
     # print(closest_curve)
+    # print(closest_curve)
     closest_mapper = vtk.vtkPolyDataMapper()
     closest_mapper.SetInputData(closest_curve)
 
@@ -158,26 +160,42 @@ if closest_curve.GetNumberOfPoints() > 0:
     renderer.AddActor(closest_actor)
     renderWindow.Render()
 
+    # num_lines = closest_curve.GetNumberOfLines()
+    # a = closest_curve.GetLines()
+    # print(a)
     # 要通过 bounds 获取曲线的轨迹，bounds 本身是不够的，因为它只提供曲线的轴对齐包围盒的范围，而没有包含曲线的具体点数据或几何细节。
 
     # 1.通过 bounds 辅助获取曲线内的点：
     # 如果 bounds 提供了曲线的边界范围，但你只能从中提取点数据，可以结合过滤器筛选出在 bounds 范围内的点。
     num_cells = closest_curve.GetNumberOfCells()
     filtered_points = []
+    num = 0
     points = closest_curve.GetPoints()  # 获取点集
     num_points = points.GetNumberOfPoints()
     for cell_id in range(num_cells):
         bounds = [0.0] * 6  # 用于存储当前单元的边界
         closest_curve.GetCellBounds(cell_id, bounds)
-
+        # print("bounds", bounds)
         for i in range(num_points):
             point = points.GetPoint(i)  # 获取点坐标
             x, y, z = point
+            # filtered_points.append([point[0], point[1]])
             if bounds[0] <= x <= bounds[1] and bounds[2] <= y <= bounds[3] and bounds[4] <= z <= bounds[5]:
+                # print("point", point)
                 filtered_points.append([point[0], point[1]])
-    print(filtered_points)
 
-    # print(points)
+                # if len(filtered_points) > 2:
+                #     if abs(abs(filtered_points[num-1][0] - filtered_points[num-2][0]) - abs(filtered_points[num][0] - filtered_points[num-1][0])) > 10 or abs(abs(filtered_points[num-1][1] - filtered_points[num-2][1]) - abs(filtered_points[num][1] - filtered_points[num-1][1])) > 10:
+                        # filtered_points.pop(num-1)
+                        # print(filtered_points[num-2], filtered_points[num-1], filtered_points[num])
+                        # continue
+                num += 1
+    with open("../file/point.json", "w") as f:
+        f.write(str(list(tuple(filtered_points))))
+    # print(filtered_points)
+    # for i in list(tuple(filtered_points)):
+    #     print(f"G01 X{i[0]} Y{i[1]} Z0 F1000")
+        # print(points)
 else:
     print("未找到封闭曲线")
 
