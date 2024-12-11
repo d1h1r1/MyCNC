@@ -1,13 +1,14 @@
+import time
+import shapely.geometry as sg
 import vtk
-from vtkmodules.util import colors
-from vtkmodules.vtkRenderingCore import vtkPolyDataMapper, vtkActor
 
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
 # stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
-stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
+# stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
 # stlReader.SetFileName("../file/myhand.stl")  # 替换为你的 STL 文件路径
-# stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
+# stlReader.SetFileName("../file/all_elephant.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
 # 获取模型的 PolyData
@@ -34,57 +35,9 @@ renderWindow.AddRenderer(renderer)
 interactor = vtk.vtkRenderWindowInteractor()
 interactor.SetRenderWindow(renderWindow)
 
-interactor_style = vtk.vtkInteractorStyleTrackballCamera()
-
-# 禁用默认鼠标左键旋转
-interactor_style.SetCurrentRenderer(renderer)
-interactor_style.OnLeftButtonDown = lambda: None  # 取消左键事件
-interactor_style.OnLeftButtonUp = lambda: None
-
-
-# 将鼠标中键事件绑定为旋转
-def rotate_with_middle_button():
-    interactor_style.StartRotate()
-
-
-def end_rotate_with_middle_button():
-    interactor_style.EndRotate()
-
-
-interactor_style.OnMiddleButtonDown = rotate_with_middle_button
-interactor_style.OnMiddleButtonUp = end_rotate_with_middle_button
-
-interactor.SetInteractorStyle(interactor_style)
-
-camera = renderer.GetActiveCamera()
-
-
-# 键盘事件的回调函数
-def key_press_callback(obj, event):
-    key = obj.GetKeySym()
-    step = 10  # 平移步长
-    if key == "Up":
-        camera.SetPosition(camera.GetPosition()[0], camera.GetPosition()[1] + step, camera.GetPosition()[2])
-        camera.SetFocalPoint(camera.GetFocalPoint()[0], camera.GetFocalPoint()[1] + step, camera.GetFocalPoint()[2])
-    elif key == "Down":
-        camera.SetPosition(camera.GetPosition()[0], camera.GetPosition()[1] - step, camera.GetPosition()[2])
-        camera.SetFocalPoint(camera.GetFocalPoint()[0], camera.GetFocalPoint()[1] - step, camera.GetFocalPoint()[2])
-    elif key == "Left":
-        camera.SetPosition(camera.GetPosition()[0] - step, camera.GetPosition()[1], camera.GetPosition()[2])
-        camera.SetFocalPoint(camera.GetFocalPoint()[0] - step, camera.GetFocalPoint()[1], camera.GetFocalPoint()[2])
-    elif key == "Right":
-        camera.SetPosition(camera.GetPosition()[0] + step, camera.GetPosition()[1], camera.GetPosition()[2])
-        camera.SetFocalPoint(camera.GetFocalPoint()[0] + step, camera.GetFocalPoint()[1], camera.GetFocalPoint()[2])
-    elif key == "r":  # 重置视图
-        renderer.ResetCamera()
-    renderWindow.Render()
-
-
-# 绑定键盘事件
-interactor.AddObserver("KeyPressEvent", key_press_callback)
-
+start = time.time()
 normal = [0.0, 0.0, 1.0]  # 平行于 XY 平面
-pick_pos = [-1000, 0, -7]
+pick_pos = [-1000, -1000, -3.1]
 # 创建平面
 plane = vtk.vtkPlane()
 plane.SetOrigin(pick_pos)
@@ -130,14 +83,8 @@ for i in range(num_regions):
     connectivity_filter.Update()
     # 当前分量数据
     region_polydata = connectivity_filter.GetOutput()
-    # print(region_polydata)
-
     bounds = [0.0] * 6
     region_polydata.GetCellsBounds(bounds)
-    # print(bounds)
-    # print(f"Xmin, Xmax: ({bounds[0]}, {bounds[1]})")
-    # print(f"Ymin, Ymax: ({bounds[2]}, {bounds[3]})")
-    # print(f"Zmin, Zmax: ({bounds[4]}, {bounds[5]})")
     distance = (bounds[0] - pick_pos[0]) ** 2 + (bounds[2] - pick_pos[1]) ** 2
     if distance < min_distance:
         # print(distance)
@@ -148,7 +95,6 @@ for i in range(num_regions):
 # 渲染最近的封闭曲线
 if closest_curve.GetNumberOfPoints() > 0:
     # print(closest_curve)
-    # print(closest_curve)
     closest_mapper = vtk.vtkPolyDataMapper()
     closest_mapper.SetInputData(closest_curve)
 
@@ -158,47 +104,84 @@ if closest_curve.GetNumberOfPoints() > 0:
     closest_actor.GetProperty().SetLineWidth(3)
     # print(closest_mapper)
     renderer.AddActor(closest_actor)
-    renderWindow.Render()
+    # renderWindow.Render()
 
-    # num_lines = closest_curve.GetNumberOfLines()
-    # a = closest_curve.GetLines()
-    # print(a)
-    # 要通过 bounds 获取曲线的轨迹，bounds 本身是不够的，因为它只提供曲线的轴对齐包围盒的范围，而没有包含曲线的具体点数据或几何细节。
-
-    # 1.通过 bounds 辅助获取曲线内的点：
-    # 如果 bounds 提供了曲线的边界范围，但你只能从中提取点数据，可以结合过滤器筛选出在 bounds 范围内的点。
     num_cells = closest_curve.GetNumberOfCells()
-    filtered_points = []
-    num = 0
+    points_list = []
+    lines = []
     points = closest_curve.GetPoints()  # 获取点集
     num_points = points.GetNumberOfPoints()
     for cell_id in range(num_cells):
-        bounds = [0.0] * 6  # 用于存储当前单元的边界
-        closest_curve.GetCellBounds(cell_id, bounds)
-        # print("bounds", bounds)
-        for i in range(num_points):
-            point = points.GetPoint(i)  # 获取点坐标
-            x, y, z = point
-            # filtered_points.append([point[0], point[1]])
-            if bounds[0] <= x <= bounds[1] and bounds[2] <= y <= bounds[3] and bounds[4] <= z <= bounds[5]:
-                # print("point", point)
-                filtered_points.append([point[0], point[1]])
+        cell = closest_curve.GetCell(cell_id)
+        # print(cell)
+        point_ids = cell.GetPointIds()
+        point1 = point_ids.GetId(0)
+        point2 = point_ids.GetId(1)
 
-                # if len(filtered_points) > 2:
-                #     if abs(abs(filtered_points[num-1][0] - filtered_points[num-2][0]) - abs(filtered_points[num][0] - filtered_points[num-1][0])) > 10 or abs(abs(filtered_points[num-1][1] - filtered_points[num-2][1]) - abs(filtered_points[num][1] - filtered_points[num-1][1])) > 10:
-                        # filtered_points.pop(num-1)
-                        # print(filtered_points[num-2], filtered_points[num-1], filtered_points[num])
-                        # continue
-                num += 1
+        # 存储线段的两个点
+        lines.append((point1, point2))
+
+    # 构建连接顺序并忽略闭合路径
+    connected_points = []
+    used_lines = set()  # 用于记录已使用的线段
+    used_points = set()  # 用于记录已访问的点
+
+    # 遍历所有线段
+    for start_point, end_point in lines:
+        # 如果该线段已被访问或闭合，则跳过
+        if (start_point, end_point) in used_lines or (end_point, start_point) in used_lines:
+            continue
+
+        # 初始化一个新路径
+        path = [start_point, end_point]
+        used_lines.add((start_point, end_point))
+        used_points.update(path)
+
+        # 构建非闭合路径
+        is_closed = False
+        while True:
+            extended = False
+            for line in lines:
+                if line in used_lines or (line[1], line[0]) in used_lines:
+                    continue
+
+                # 检查线段是否可以扩展路径
+                if line[0] == path[-1] and line[1] not in path:
+                    path.append(line[1])
+                    used_lines.add(line)
+                    used_points.add(line[1])
+                    extended = True
+                elif line[1] == path[-1] and line[0] not in path:
+                    path.append(line[0])
+                    used_lines.add(line)
+                    used_points.add(line[0])
+                    extended = True
+
+                # 如果路径首尾相连，则为闭合路径
+                if path[-1] == path[0]:
+                    is_closed = True
+                    break
+
+            if not extended or is_closed:
+                break
+
+        # 如果不是闭合路径，记录到结果中
+        if not is_closed:
+            connected_points.append(path)
+
+    # 输出结果
+    for i, path in enumerate(connected_points):
+        # print(f"非闭合路径 {i + 1}: {path}")
+        for point_id in path:
+            point = points.GetPoint(point_id)
+            points_list.append([point[0], point[1]])
     with open("../file/point.json", "w") as f:
-        f.write(str(list(tuple(filtered_points))))
-    # print(filtered_points)
-    # for i in list(tuple(filtered_points)):
-    #     print(f"G01 X{i[0]} Y{i[1]} Z0 F1000")
-        # print(points)
-else:
-    print("未找到封闭曲线")
+        f.write(str(points_list))
 
-# 启动渲染和交互
-renderWindow.Render()
-interactor.Start()
+    polygon_area = sg.Polygon(points_list).area
+    print(polygon_area)
+end = time.time()
+print(end - start)
+# # 启动渲染和交互
+# renderWindow.Render()
+# interactor.Start()

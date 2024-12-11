@@ -15,14 +15,13 @@ def leftButtonPressEvent(obj, event):
 
     # 获取点击的面（cell）
     cell_id = picker.GetCellId()
-    print(picker)
+    # print(picker)
     if cell_id != -1:
         print(f"点击的是面 {cell_id}")
         # picked_actor = picker.GetActor()
         # bounds = picked_actor.GetBounds()  # 获取边界框
         # print(f"Picked object's bounds: {bounds}")
         normal = [0.0, 0.0, 1.0]  # 平行于 XY 平面
-        pick_pos = [-1000, 0, -3]
         # 创建平面
         plane = vtk.vtkPlane()
         plane.SetOrigin(pick_pos)
@@ -47,80 +46,80 @@ def leftButtonPressEvent(obj, event):
         # 开始渲染
         renderWindow.Render()
 
-        # cutter_output = cutter.GetOutput()
-        #
-        # # 提取连通分量
-        # connectivity_filter = vtk.vtkConnectivityFilter()
-        # connectivity_filter.SetInputData(cutter_output)
-        # connectivity_filter.SetExtractionModeToAllRegions()
-        # connectivity_filter.Update()
-        #
-        # # 获取连通分量的数量
-        # num_regions = connectivity_filter.GetNumberOfExtractedRegions()
-        # # print(num_regions)
-        # min_distance = float('inf')
-        # closest_curve = vtk.vtkPolyData()
-        #
-        # # 遍历每个连通分量
-        # for i in range(num_regions):
-        #
-        #     connectivity_filter.InitializeSpecifiedRegionList()
-        #     connectivity_filter.AddSpecifiedRegion(i)
-        #     connectivity_filter.SetExtractionModeToSpecifiedRegions()
-        #     connectivity_filter.Update()
-        #
-        #     # 当前分量数据
-        #     region_polydata = connectivity_filter.GetOutput()
-        #
-        #     bounds = [0.0] * 6
-        #     region_polydata.GetCellsBounds(bounds)
-        #     # print(bounds)
-        #     # print(f"Xmin, Xmax: ({bounds[0]}, {bounds[1]})")
-        #     # print(f"Ymin, Ymax: ({bounds[2]}, {bounds[3]})")
-        #     # print(f"Zmin, Zmax: ({bounds[4]}, {bounds[5]})")
-        #     distance = (bounds[0] - pick_pos[0]) ** 2 + (bounds[2] - pick_pos[1]) ** 2
-        #     if distance < min_distance:
-        #         # print(distance)
-        #         min_distance = distance
-        #         closest_curve = vtk.vtkPolyData()
-        #         closest_curve.DeepCopy(region_polydata)
-        #
-        # # 渲染最近的封闭曲线
-        # if closest_curve.GetNumberOfPoints() > 0:
-        #     # print(closest_curve)
-        #     closest_mapper = vtk.vtkPolyDataMapper()
-        #     closest_mapper.SetInputData(closest_curve)
-        #
-        #     closest_actor = vtk.vtkActor()
-        #     closest_actor.SetMapper(closest_mapper)
-        #     closest_actor.GetProperty().SetColor(0, 1, 0)  # 绿色表示最近的曲线
-        #     closest_actor.GetProperty().SetLineWidth(3)
-        #     # print(closest_mapper)
-        #     renderer.AddActor(closest_actor)
-        #     renderWindow.Render()
-        #
-        #     # 要通过 bounds 获取曲线的轨迹，bounds 本身是不够的，因为它只提供曲线的轴对齐包围盒的范围，而没有包含曲线的具体点数据或几何细节。
-        #
-        #     # 1.通过 bounds 辅助获取曲线内的点：
-        #     # 如果 bounds 提供了曲线的边界范围，但你只能从中提取点数据，可以结合过滤器筛选出在 bounds 范围内的点。
-        #     num_cells = closest_curve.GetNumberOfCells()
-        #     filtered_points = []
-        #     points = closest_curve.GetPoints()  # 获取点集
-        #     num_points = points.GetNumberOfPoints()
-        #     for cell_id in range(num_cells):
-        #         bounds = [0.0] * 6  # 用于存储当前单元的边界
-        #         closest_curve.GetCellBounds(cell_id, bounds)
-        #
-        #         for i in range(num_points):
-        #             point = points.GetPoint(i)  # 获取点坐标
-        #             x, y, z = point
-        #             if bounds[0] <= x <= bounds[1] and bounds[2] <= y <= bounds[3] and bounds[4] <= z <= bounds[5]:
-        #                 filtered_points.append((point[0], point[1]))
-        #     print(filtered_points)
-        #
-        #     # print(points)
-        # else:
-        #     print("未找到封闭曲线")
+        cutter_output = cutter.GetOutput()
+
+        # 提取连通分量
+        connectivity_filter = vtk.vtkConnectivityFilter()
+        connectivity_filter.SetInputData(cutter_output)
+        connectivity_filter.SetExtractionModeToAllRegions()
+        connectivity_filter.Update()
+
+        # 获取连通分量的数量
+        num_regions = connectivity_filter.GetNumberOfExtractedRegions()
+        # print(num_regions)
+        min_distance = float('inf')
+        closest_curve = vtk.vtkPolyData()
+
+        # 遍历每个连通分量
+        for i in range(num_regions):
+
+            connectivity_filter.InitializeSpecifiedRegionList()
+            connectivity_filter.AddSpecifiedRegion(i)
+            connectivity_filter.SetExtractionModeToSpecifiedRegions()
+            connectivity_filter.Update()
+
+            # 当前分量数据
+            region_polydata = connectivity_filter.GetOutput()
+
+            bounds = [0.0] * 6
+            region_polydata.GetCellsBounds(bounds)
+            # print(bounds)
+            # print(f"Xmin, Xmax: ({bounds[0]}, {bounds[1]})")
+            # print(f"Ymin, Ymax: ({bounds[2]}, {bounds[3]})")
+            # print(f"Zmin, Zmax: ({bounds[4]}, {bounds[5]})")
+            distance = (bounds[0] - pick_pos[0]) ** 2 + (bounds[2] - pick_pos[1]) ** 2
+            if distance < min_distance:
+                # print(distance)
+                min_distance = distance
+                closest_curve = vtk.vtkPolyData()
+                closest_curve.DeepCopy(region_polydata)
+
+        # 渲染最近的封闭曲线
+        if closest_curve.GetNumberOfPoints() > 0:
+            # print(closest_curve)
+            closest_mapper = vtk.vtkPolyDataMapper()
+            closest_mapper.SetInputData(closest_curve)
+
+            closest_actor = vtk.vtkActor()
+            closest_actor.SetMapper(closest_mapper)
+            closest_actor.GetProperty().SetColor(0, 1, 0)  # 绿色表示最近的曲线
+            closest_actor.GetProperty().SetLineWidth(3)
+            # print(closest_mapper)
+            renderer.AddActor(closest_actor)
+            renderWindow.Render()
+
+            # 要通过 bounds 获取曲线的轨迹，bounds 本身是不够的，因为它只提供曲线的轴对齐包围盒的范围，而没有包含曲线的具体点数据或几何细节。
+
+            # 1.通过 bounds 辅助获取曲线内的点：
+            # 如果 bounds 提供了曲线的边界范围，但你只能从中提取点数据，可以结合过滤器筛选出在 bounds 范围内的点。
+            num_cells = closest_curve.GetNumberOfCells()
+            filtered_points = []
+            points = closest_curve.GetPoints()  # 获取点集
+            num_points = points.GetNumberOfPoints()
+            for cell_id in range(num_cells):
+                bounds = [0.0] * 6  # 用于存储当前单元的边界
+                closest_curve.GetCellBounds(cell_id, bounds)
+
+                for i in range(num_points):
+                    point = points.GetPoint(i)  # 获取点坐标
+                    x, y, z = point
+                    if bounds[0] <= x <= bounds[1] and bounds[2] <= y <= bounds[3] and bounds[4] <= z <= bounds[5]:
+                        filtered_points.append((point[0], point[1]))
+            print(filtered_points)
+
+            # print(points)
+        else:
+            print("未找到封闭曲线")
 
     else:
         print("没有点击到有效的面")
