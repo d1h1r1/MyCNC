@@ -4,8 +4,8 @@ import vtk
 
 # 读取 STL 文件
 reader = vtk.vtkSTLReader()
-# reader.SetFileName("../file/Coin_half.stl")
-reader.SetFileName("../file/Throwing.stl")
+reader.SetFileName("../file/Coin_half.stl")
+# reader.SetFileName("../file/Throwing.stl")
 reader.Update()
 
 # 获取加载的 STL 数据
@@ -26,36 +26,3 @@ for i in range(points.GetNumberOfPoints()):
 with open("../file/point.json", "w") as f:
     f.write(str(points_list))
 print(points_list)
-exit()
-# 创建一个新的 PolyData 来存储投影后的点
-projected_polydata = vtk.vtkPolyData()
-projected_polydata.SetPoints(projected_points)
-
-# 显示投影后的点
-point_mapper = vtk.vtkPolyDataMapper()
-point_mapper.SetInputData(projected_polydata)
-
-point_actor = vtk.vtkActor()
-point_actor.SetMapper(point_mapper)
-point_actor.GetProperty().SetColor(1, 0, 0)  # 红色表示平面的外轮廓线
-point_actor.GetProperty().SetLineWidth(2)
-# 创建渲染器
-renderer = vtk.vtkRenderer()
-
-# 创建渲染窗口
-renderWindow = vtk.vtkRenderWindow()
-renderWindow.AddRenderer(renderer)
-
-# 创建渲染窗口交互器
-renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-renderWindowInteractor.SetRenderWindow(renderWindow)
-
-# 将点添加到渲染器中
-renderer.AddActor(point_actor)
-
-# 设置渲染参数
-renderer.SetBackground(0, 0, 1)  # 白色背景
-
-# 开始渲染
-renderWindow.Render()
-renderWindowInteractor.Start()

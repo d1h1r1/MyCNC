@@ -15,6 +15,7 @@ def leftButtonPressEvent(obj, event):
 
     # 获取点击的面（cell）
     cell_id = picker.GetCellId()
+    print(picker)
     if cell_id != -1:
         print(f"点击的是面 {cell_id}")
         # picked_actor = picker.GetActor()
