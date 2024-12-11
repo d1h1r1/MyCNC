@@ -427,8 +427,8 @@ def simplify_stl_quadratic(input_file, output_file, target_reduction=0.5):
 
 
 if __name__ == "__main__":
-    stlfile = "../file/elephant.stl"
-    # stlfile = "../file/Throwing.stl"
+    # stlfile = "../file/elephant.stl"
+    stlfile = "../file/Throwing.stl"
     # stlfile = "../file/myhand.stl"
     # stlfile = "../file/coin_half.stl"
     # stlfile = "../file/modified_model.stl"
@@ -441,7 +441,7 @@ if __name__ == "__main__":
     Ny = 20
     layer = 1
     step_over = 1
-    diameter = 3
+    diameter = 1
     length = 8
     # 示例：简化 STL 文件
     simplify_file = 'simplified_model.stl'
