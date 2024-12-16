@@ -427,8 +427,8 @@ def simplify_stl_quadratic(input_file, output_file, target_reduction=0.5):
 
 
 if __name__ == "__main__":
-    # stlfile = "../file/elephant.stl"
-    stlfile = "../file/Throwing.stl"
+    stlfile = "../file/elephant.stl"
+    # stlfile = "../file/Throwing.stl"
     # stlfile = "../file/myhand.stl"
     # stlfile = "../file/coin_half.stl"
     # stlfile = "../file/modified_model.stl"
@@ -468,7 +468,7 @@ if __name__ == "__main__":
     # paths = path_algorithm.YdirectionAlternatingZigPath(xmin, xmax, ymin, ymax, -2, Ny, 4)  # 双向锯齿
     # paths = path_algorithm.SpiralPathOut(0, 0, -10, 73, 0.5, 10)  # 螺旋路径1，从内到外
     # # paths = path_algorithm.SpiralPathIn(-106, 93, -2, 10, 1, 2)  # 螺旋路径2，从外向内, 不连续圆
-    paths = path_algorithm.OffsetPath(data, diameter, -3, layer, step_over)  # 轮廓内部切割路径
+    paths = path_algorithm.OffsetPath(data, diameter, -10, layer, step_over)  # 轮廓内部切割路径
     # # paths = path_algorithm.ContourPath(ef, diameter, z_depth, layer)  # 曲线跟随
     # # paths = path_algorithm.SpiralPath(0, 0, -3, 10, 1)  # 画圆
     s = time.time()
