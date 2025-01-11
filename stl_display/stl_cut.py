@@ -4,10 +4,10 @@ import vtk
 
 # 创建 STL 文件读取器
 stlReader = vtk.vtkSTLReader()
-stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
+# stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
 # stlReader.SetFileName("../file/Coin_half.stl")  # 替换为你的 STL 文件路径
 # stlReader.SetFileName("../file/myhand.stl")  # 替换为你的 STL 文件路径
-# stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
+stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
 # stlReader.SetFileName("../file/all_elephant.stl")  # 替换为你的 STL 文件路径
 stlReader.Update()  # 读取 STL 数据
 
@@ -37,7 +37,7 @@ interactor.SetRenderWindow(renderWindow)
 
 start = time.time()
 normal = [0.0, 0.0, 1.0]  # 平行于 XY 平面
-pick_pos = [-1000, -1000, -7]
+pick_pos = [-1000, -1000, -3.2]
 # 创建平面
 plane = vtk.vtkPlane()
 plane.SetOrigin(pick_pos)

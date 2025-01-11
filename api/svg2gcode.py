@@ -195,12 +195,12 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
 
     # 从根元素开始遍历
     traverse_element(root)
-    # exit()
+    exit()
     for path in root.findall(".//svg:g", namespace):
         matrix = path.attrib.get('transform')
         print(matrix)
         matrix_list.append(matrix)
-    # exit()
+    exit()
     with open(output_file, 'w') as gcode_file:
         # 写入 G-code 文件的头部
         gcode_file.write("G21\nG0 G17 G49 G80 G90\n")
