@@ -14,7 +14,7 @@ CORS(app, resources=r'/*')
 @app.route("/stl_api", methods=['POST'])
 def stl_api():
     data = request.form
-    q = data.get('q')
+    # q = data.get('q')
     if 'file' in request.files:
         file = request.files['file']
         file_name = file.filename
