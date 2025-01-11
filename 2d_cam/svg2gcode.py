@@ -1,4 +1,5 @@
 import re
+import time
 from xml.etree import ElementTree
 from svgpathtools import svg2paths
 import numpy as np
@@ -170,9 +171,36 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
     namespace = {"svg": "http://www.w3.org/2000/svg"}
     matrix_list = []
 
+    # 遍历 SVG 中的所有元素
+    def traverse_element(element, indent=0):
+        # 打印当前元素标签和属性
+        num = 0
+        print('  ' * indent + f"Tag: {element.tag}, Attributes: {element.attrib}")
+        num += 1
+        print(indent)
+        transform = element.attrib.get('transform')
+        if transform:
+            translate_match = re.match(r'translate\(([^)]+)\)', transform.strip())
+            if translate_match:
+                translate_values = list(map(float, translate_match.group(1).split()))
+                print(translate_values)
+            matrix_match = re.match(r'matrix\(([^)]+)\)', transform.strip())
+            if matrix_match:
+                matrix_values = list(map(float, matrix_match.group(1).split()))
+                print(matrix_values)
+
+        # 遍历当前元素的所有子元素
+        for child in element:
+            traverse_element(child, indent + 1)
+
+    # 从根元素开始遍历
+    traverse_element(root)
+    # exit()
     for path in root.findall(".//svg:g", namespace):
         matrix = path.attrib.get('transform')
+        print(matrix)
         matrix_list.append(matrix)
+    # exit()
     with open(output_file, 'w') as gcode_file:
         # 写入 G-code 文件的头部
         gcode_file.write("G21\nG0 G17 G49 G80 G90\n")
@@ -189,22 +217,22 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
             for segment in path:
                 if segment.__class__.__name__ == 'Line':
 
-                    start = np.array([[segment.start.real-636.6175], [segment.start.imag- 415.2772], [1]])
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
                     new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
-                    end = np.array([[segment.end.real-636.6175], [segment.end.imag- 415.2772], [1]])
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
                     new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
 
                     gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
                     gcode_file.write(f"G1 X{new_end[0]:.3f} Y{-new_end[1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'CubicBezier':
-                    start = np.array([[segment.start.real-636.6175], [segment.start.imag- 415.2772], [1]])
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
                     new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
-                    end = np.array([[segment.end.real-636.6175], [segment.end.imag- 415.2772], [1]])
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
                     new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
-                    control1 = np.array([[segment.control1.real-636.6175], [segment.control1.imag- 415.2772], [1]])
+                    control1 = np.array([[segment.control1.real], [segment.control1.imag], [1]])
                     new_control1 = np.dot(transform_matrix, control1)[0][0], np.dot(transform_matrix, control1)[1][0]
-                    control2 = np.array([[segment.control2.real-636.6175], [segment.control2.imag- 415.2772], [1]])
+                    control2 = np.array([[segment.control2.real], [segment.control2.imag], [1]])
                     new_control2 = np.dot(transform_matrix, control2)[0][0], np.dot(transform_matrix, control2)[1][0]
 
                     # 对于三次贝塞尔曲线，使用插值法转换为直线段
@@ -220,11 +248,11 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                         gcode_file.write(f"G1 X{points[i][0]:.3f} Y{points[i][1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'QuadraticBezier':
-                    start = np.array([[segment.start.real-636.6175], [segment.start.imag- 415.2772], [1]])
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
                     new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
-                    end = np.array([[segment.end.real-636.6175], [segment.end.imag- 415.2772], [1]])
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
                     new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
-                    control = np.array([[segment.control.real-636.6175], [segment.control.imag- 415.2772], [1]])
+                    control = np.array([[segment.control.real], [segment.control.imag], [1]])
                     new_control = np.dot(transform_matrix, control)[0][0], np.dot(transform_matrix, control)[1][0]
 
                     gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
@@ -239,9 +267,9 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                         gcode_file.write(f"G1 X{points[i][0]:.3f} Y{points[i][1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'Arc':
-                    start = np.array([[segment.start.real-636.6175], [segment.start.imag - 415.2772], [1]])
+                    start = np.array([[segment.start.real], [segment.start.imag], [1]])
                     new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
-                    end = np.array([[segment.end.real-636.6175], [segment.end.imag- 415.2772], [1]])
+                    end = np.array([[segment.end.real], [segment.end.imag], [1]])
                     new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
 
                     gcode_file.write(f"G0 X{new_start[0]:.3f} Y{-new_start[1]:.3f}\n")
@@ -272,4 +300,6 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
 # 使用示例
 # svg_to_gcode('../file/logo.svg', 'output.nc')
 # svg_to_gcode('../file/phone.svg', 'output.nc')
-svg_to_gcode('image2.svg', 'output.nc')
+s = time.time()
+svg_to_gcode('design.svg', 'output.nc')
+print(time.time() -s)
