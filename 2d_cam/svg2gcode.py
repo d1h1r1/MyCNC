@@ -239,7 +239,7 @@ def svg_to_gcode(svg_file, output_file, feed_rate=1000, num_points=10):
                         gcode_file.write(f"G1 X{points[i][0]:.3f} Y{points[i][1]:.3f}\n")
 
                 elif segment.__class__.__name__ == 'Arc':
-                    start = np.array([[segment.start.real-636.6175], [segment.start.imag- 415.2772], [1]])
+                    start = np.array([[segment.start.real-636.6175], [segment.start.imag - 415.2772], [1]])
                     new_start = np.dot(transform_matrix, start)[0][0], np.dot(transform_matrix, start)[1][0]
                     end = np.array([[segment.end.real-636.6175], [segment.end.imag- 415.2772], [1]])
                     new_end = np.dot(transform_matrix, end)[0][0], np.dot(transform_matrix, end)[1][0]
