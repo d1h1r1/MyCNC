@@ -3,12 +3,12 @@ import shapely.geometry as sg
 import vtk
 
 
-def get_scale(path, z_depth):
+def get_scale(z_depth):
     max_area = 0
     max_area_point = []
     # 创建 STL 文件读取器
     stlReader = vtk.vtkSTLReader()
-    stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
+    stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
     stlReader.Update()  # 读取 STL 数据
 
     # 创建 PolyData 映射器
@@ -141,3 +141,8 @@ def get_scale(path, z_depth):
                 max_area_point = points_list
     with open("../file/point.json", "w") as f:
         f.write(str(max_area_point))
+
+
+t1 = time.time()
+get_scale(10)
+print(time.time() - t1)
