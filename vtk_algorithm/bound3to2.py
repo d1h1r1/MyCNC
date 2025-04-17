@@ -2,7 +2,7 @@ import vtk
 
 # 读取 STL 文件
 reader = vtk.vtkSTLReader()
-reader.SetFileName("../file/coin_half.stl")  # 替换为你的 STL 文件路径
+reader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
 reader.Update()  # 读取 STL 数据
 
 # 将 vtkUnstructuredGrid 转换为 vtkPolyData
@@ -19,12 +19,15 @@ featureEdges.Update()
 # 获取 PolyData 对象
 poly_data = featureEdges.GetOutput()
 
+point_list = []
 # 将所有点的 z 值设置为 0（投影到 Z=0 平面）
 points = poly_data.GetPoints()
 for i in range(points.GetNumberOfPoints()):
     x, y, z = points.GetPoint(i)
     points.SetPoint(i, x, y, 0)  # 修改点的 z 值为 0
+    point_list.append([points.GetPoint(i)[0], points.GetPoint(i)[1]])
 
+print(point_list)
 # 创建渲染器和渲染窗口
 renderer = vtk.vtkRenderer()
 renderWindow = vtk.vtkRenderWindow()
