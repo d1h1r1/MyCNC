@@ -8,7 +8,7 @@ import time
 import serial
 import threading
 
-ser = serial.Serial(port="COM23", baudrate=115200)
+ser = serial.Serial(port="COM4", baudrate=115200)
 unlock_command = "$X\n"
 home_command = "$H\n"
 set_zero = "S0\n"
@@ -20,16 +20,16 @@ ix, iy = -1, -1  # 起始点坐标
 x, y = 0, 0
 axis = [0, 0, 0, 0]
 
-aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
-aruco_params = cv2.aruco.DetectorParameters_create()
-on_aruco = [-291.938, -9.666]
-under_aruco = [-6.166, -133.086]
-points_list = []
-z_probe_command = [0, "G91G38.2Z-50F200\n", "G0Z2\n", "G38.2Z-3F30\n", "G90G01Z-3F1000\n"]
-lx_probe_command = [0, 1, "G91G38.2X50F200\n", "G0X-2\n", "G38.2X3F30\n", "G0X-2F1000\n", "G90G01Z-3F1000\n"]
-rx_probe_command = [0, 1, "G91G38.2X-50F200\n", "G0X2\n", "G38.2X-3F30\n", "G0X2F1000\n", "G90G01Z-3F1000\n"]
-ony_probe_command = [0, 1, "G91G38.2Y-50F200\n", "G0Y2\n", "G38.2Y-3F30\n", "G0Y2F1000\n", "G90G01Z-3F1000\n"]
-undery_probe_command = [0, 1, "G91G38.2Y50F200\n", "G0Y-2\n", "G38.2Y3F30\n", "G0Y-2F1000\n", "G90G01Z-3F1000\n"]
+# aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+# aruco_params = cv2.aruco.DetectorParameters_create()
+# on_aruco = [-291.938, -9.666]
+# under_aruco = [-6.166, -133.086]
+# points_list = []
+# z_probe_command = [0, "G91G38.2Z-50F200\n", "G0Z2\n", "G38.2Z-3F30\n", "G90G01Z-3F1000\n"]
+# lx_probe_command = [0, 1, "G91G38.2X50F200\n", "G0X-2\n", "G38.2X3F30\n", "G0X-2F1000\n", "G90G01Z-3F1000\n"]
+# rx_probe_command = [0, 1, "G91G38.2X-50F200\n", "G0X2\n", "G38.2X-3F30\n", "G0X2F1000\n", "G90G01Z-3F1000\n"]
+# ony_probe_command = [0, 1, "G91G38.2Y-50F200\n", "G0Y2\n", "G38.2Y-3F30\n", "G0Y2F1000\n", "G90G01Z-3F1000\n"]
+# undery_probe_command = [0, 1, "G91G38.2Y50F200\n", "G0Y-2\n", "G38.2Y3F30\n", "G0Y-2F1000\n", "G90G01Z-3F1000\n"]
 
 
 # time.sleep(3)
@@ -298,10 +298,10 @@ if __name__ == '__main__':
 
     while True:
         ret, img = cap.read()
-        scale, img = get_aruco(img)
+        # scale, img = get_aruco(img)
         # print(scale)
-        if scale == 0:
-            continue
+        # if scale == 0:
+        #     continue
         cv2.rectangle(img, (axis[0], axis[1]), (axis[2], axis[3]), (0, 255, 0), 1)  #
         if s == "1":
             filtered_contours, areas, approx_list = find_contour(img)
