@@ -1,0 +1,92 @@
+*
+*
+G04 PADS VX.2 Build Number: 5060570 generated Gerber (RS-274-X) file*
+G04 PC Version=2.1*
+*
+%IN "Mercury-A1_connecter_V1"*%
+*
+%MOIN*%
+*
+%FSLAX35Y35*%
+*
+*
+*
+*
+G04 PC Standard Apertures*
+*
+*
+G04 Thermal Relief Aperture macro.*
+%AMTER*
+1,1,$1,0,0*
+1,0,$1-$2,0,0*
+21,0,$3,$4,0,0,45*
+21,0,$3,$4,0,0,135*
+%
+*
+*
+G04 Annular Aperture macro.*
+%AMANN*
+1,1,$1,0,0*
+1,0,$2,0,0*
+%
+*
+*
+G04 Odd Aperture macro.*
+%AMODD*
+1,1,$1,0,0*
+1,0,$1-0.005,0,0*
+%
+*
+*
+G04 PC Custom Aperture Macros*
+*
+*
+*
+*
+*
+*
+G04 PC Aperture Table*
+*
+%ADD010C,0.001*%
+%ADD193R,0.02362X0.06102*%
+%ADD194R,0.04724X0.07087*%
+*
+*
+*
+*
+G04 PC Circuitry*
+G04 Layer Name Mercury-A1_connecter_V1 - circuitry*
+%LPD*%
+*
+*
+G04 PC Custom Flashes*
+G04 Layer Name Mercury-A1_connecter_V1 - flashes*
+%LPD*%
+*
+*
+G04 PC Circuitry*
+G04 Layer Name Mercury-A1_connecter_V1 - circuitry*
+%LPD*%
+*
+G54D10*
+G01X200000Y100000D02*
+X231496D01*
+Y147244*
+X200000*
+Y100000*
+G54D193*
+X221654Y119445D03*
+X217717D03*
+X213780D03*
+X209843D03*
+Y127799D03*
+X213780D03*
+X217717D03*
+X221654D03*
+G54D194*
+X204725Y104185D03*
+X226772D03*
+Y143059D03*
+X204725D03*
+X0Y0D02*
+M02*

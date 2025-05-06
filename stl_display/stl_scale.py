@@ -3,12 +3,12 @@ import shapely.geometry as sg
 import vtk
 
 
-def get_scale(path, z_depth):
+def get_scale(z_depth):
     max_area = 0
     max_area_point = []
     # 创建 STL 文件读取器
     stlReader = vtk.vtkSTLReader()
-    stlReader.SetFileName("../file/elephant.stl")  # 替换为你的 STL 文件路径
+    stlReader.SetFileName("../file/Throwing.stl")  # 替换为你的 STL 文件路径
     stlReader.Update()  # 读取 STL 数据
 
     # 创建 PolyData 映射器
@@ -16,8 +16,8 @@ def get_scale(path, z_depth):
     mapper.SetInputConnection(stlReader.GetOutputPort())
 
     normal = [0.0, 0.0, 1.0]  # 平行于 XY 平面
-    for i in range(abs(z_depth * 100)):
-        pick_pos = [-1000, -1000, -0.01 * i]
+    for i in range(int(abs(z_depth * 10))+1):
+        pick_pos = [-1000, -1000, -0.1 * i]
         # 创建平面
         plane = vtk.vtkPlane()
         plane.SetOrigin(pick_pos)
@@ -76,7 +76,7 @@ def get_scale(path, z_depth):
                 point_ids = cell.GetPointIds()
                 point1 = point_ids.GetId(0)
                 point2 = point_ids.GetId(1)
-
+                print(point1, point2)
                 # 存储线段的两个点
                 lines.append((point1, point2))
 
@@ -141,3 +141,9 @@ def get_scale(path, z_depth):
                 max_area_point = points_list
     with open("../file/point.json", "w") as f:
         f.write(str(max_area_point))
+
+
+t1 = time.time()
+get_scale(10)
+t2 = time.time()
+print(t2 - t1)

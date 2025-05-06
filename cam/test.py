@@ -123,5 +123,4 @@ def connect_points_to_contours(edges):
 # 使用示例
 stl_file = "../file/elephant.stl"  # 替换为你的 STL 文件路径
 toolpaths = generate_toolpath(stl_file, slice_height=1)
-print(toolpaths)
 plot_toolpath(toolpaths)

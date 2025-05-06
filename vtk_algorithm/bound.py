@@ -1,7 +1,9 @@
 import vtk
+from matplotlib import pyplot as plt
 
 reader = vtk.vtkSTLReader()
-reader.SetFileName("../file/coin_half.stl")  # 替换为你的 STL 文件路径
+reader.SetFileName("../file/Elephant.stl")  # 替换为你的 STL 文件路径
+# reader.SetFileName("../file/灵巧手末端.stl")  # 替换为你的 STL 文件路径
 reader.Update()  # 读取 STL 数据
 # 将 vtkUnstructuredGrid 转换为 vtkPolyData
 geometryFilter = vtk.vtkGeometryFilter()
@@ -30,6 +32,34 @@ renderWindowInteractor.SetRenderWindow(renderWindow)
 edgeMapper = vtk.vtkPolyDataMapper()
 edgeMapper.SetInputConnection(featureEdges.GetOutputPort())
 
+# 当前分量数据
+region_polydata = featureEdges.GetOutput()
+bounds = [0.0] * 6
+region_polydata.GetCellsBounds(bounds)
+num_cells = region_polydata.GetNumberOfCells()
+points_list = []
+lines = []
+
+points = region_polydata.GetPoints()  # 获取点集
+num_points = points.GetNumberOfPoints()
+pointStartEnd = []
+for cell_id in range(num_cells):
+    cell = region_polydata.GetCell(cell_id)
+
+    point_ids = cell.GetPointIds()
+    point1ID = point_ids.GetId(0)
+    point2ID = point_ids.GetId(1)
+    point1 = points.GetPoint(point1ID)
+    point2 = points.GetPoint(point2ID)
+    print(point1, point2)
+    # x_coords, y_coords = point1[0], point1[1]
+    # plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path')
+    # x_coords, y_coords = point2[0], point2[1]
+    # plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path')
+    # print(points.GetPoint(point1), points.GetPoint(point2))
+    # print(point1, point2)
+
+# plt.show()
 edgeActor = vtk.vtkActor()
 edgeActor.SetMapper(edgeMapper)
 
