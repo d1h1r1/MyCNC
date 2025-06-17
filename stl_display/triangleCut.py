@@ -2,8 +2,9 @@ import math
 import multiprocessing
 import random
 import time
+import traceback
 from multiprocessing import Pool
-
+from collections import OrderedDict
 import pyslm
 import shapely.geometry as sg
 import trimesh
@@ -12,6 +13,7 @@ from collections import defaultdict
 
 from matplotlib import pyplot as plt
 from shapely import unary_union, Polygon, LineString, polygonize, MultiLineString, GeometryCollection
+from shapely.validation import explain_validity
 
 
 def is_contour_inside(inner_contour, outer_contour):
@@ -102,190 +104,6 @@ def jaccard_similarity(contour1, contour2):
     return similar_value
 
 
-def process_slice2(args):
-    i, triangles = args
-    target_z = -0.1 * i  # 切片高度
-
-    slice_lines = []
-
-    for tri in triangles:
-        seg = intersect_triangle_with_plane(tri, target_z)
-        if seg:
-            slice_lines.append(LineString(seg))
-
-    if not slice_lines:
-        return target_z, []
-
-    # 将线段拼接成闭合路径
-    # 合并所有线段
-    merged = unary_union(slice_lines)
-
-    # 准备 polygonize 的输入
-    geoms = []
-    if isinstance(merged, (LineString, MultiLineString)):
-        geoms = [merged]
-
-    elif isinstance(merged, GeometryCollection):
-        for g in merged.geoms:
-            if isinstance(g, (LineString, MultiLineString)):
-                if hasattr(g, "coords") and len(g.coords) >= 2:
-                    geoms.append(g)
-
-    # 安全检查
-    if not geoms:
-        return target_z, []
-
-    # 尝试 polygonize
-    try:
-        polygons = list(polygonize(geoms))
-    except Exception as e:
-        print(f"[ERROR @ z={target_z:.3f}] polygonize failed: {e}")
-        return target_z, []
-
-    perList = []
-    for poly in polygons:
-        process_polygon(poly, perList)
-
-    # 可视化
-    for ring in perList:
-        print(f'z={target_z:.3f}')
-        x_coords, y_coords = zip(*ring)
-        plt.plot(x_coords, y_coords, '-o', markersize=1)
-    if perList:
-        plt.title(f"Slice at z = {target_z:.3f}")
-        plt.axis('equal')
-        plt.show()
-
-    return target_z, perList
-
-
-def intersect_triangle_with_plane(tri, z):
-    """与水平面 z 相交，返回两个交点组成的线段"""
-    points = []
-    for i in range(3):
-        p1, p2 = tri[i], tri[(i + 1) % 3]
-        z1, z2 = p1[2], p2[2]
-
-        if (z1 - z) * (z2 - z) < 0:
-            # 插值计算交点
-            t = (z - z1) / (z2 - z1)
-            x = p1[0] + t * (p2[0] - p1[0])
-            y = p1[1] + t * (p2[1] - p1[1])
-            points.append((x, y))
-        elif z1 == z and z2 != z:
-            points.append((p1[0], p1[1]))
-        elif z2 == z and z1 != z:
-            points.append((p2[0], p2[1]))
-
-    if len(points) == 2:
-        return points
-    else:
-        return None
-
-
-def process_slice(args):
-    i, triangles = args
-    target_z = -0.1 * i  # 设置切片平面位置
-    solidPart = pyslm.Part('stl')
-    solidPart.setGeometry("../file/select_current_stl_file.stl")
-    geomSlice = solidPart.getVectorSlice(target_z)
-    # 预处理：快速筛选可能有效的三角形
-    valid_polygons = []
-    for tri in triangles:
-        # 快速检查三个顶点是否都在目标平面上方
-        if tri[0][2] <= target_z or tri[1][2] <= target_z or tri[2][2] <= target_z:
-            continue
-
-        # 投影到XY平面
-        xy = ((tri[0][0], tri[0][1]), (tri[1][0], tri[1][1]), (tri[2][0], tri[2][1]))
-        poly = Polygon(xy)
-        # 只检查面积，is_valid 检查相对昂贵
-        if poly.area > 1e-10:  # 使用更小的阈值避免浮点误差
-            valid_polygons.append(poly)
-
-    # 如果没有有效多边形，直接返回
-    if not valid_polygons:
-        return target_z, []
-
-    # 合并多边形
-    try:
-        merged = unary_union(valid_polygons)
-    except:
-        return target_z, []
-
-    # 处理合并结果
-    perList = []
-    if merged.is_empty:
-        return target_z, []
-
-    if merged.geom_type == 'Polygon':
-        process_polygon(merged, perList)
-    elif merged.geom_type == 'MultiPolygon':
-        for poly in merged.geoms:
-            process_polygon(poly, perList)
-    retuenList = []
-    for i in range(len(perList)):
-        if len(perList) == len(geomSlice):
-            poly1 = Polygon(perList[i])
-            poly2 = Polygon(geomSlice[i])
-            # print(perList[i])
-            # print(list(geomSlice[i]))
-            if poly2.contains(poly1) and jaccard_similarity(poly1, poly2) > 0.9:
-                retuenList.append(geomSlice[i].tolist())
-            else:
-                retuenList.append(perList[i])
-        else:
-            retuenList.append(perList[i])
-    return target_z, retuenList
-
-
-def process_slice2(args):
-    i, triangles = args
-    target_z = -0.1 * i  # 设置切片平面位置
-
-    # 预处理：快速筛选可能有效的三角形
-    valid_polygons = []
-    for tri in triangles:
-        # 快速检查三个顶点是否都在目标平面上方
-        if tri[0][2] <= target_z and tri[1][2] <= target_z and tri[2][2] <= target_z:
-            continue
-
-        # 投影到XY平面
-        xy = ((tri[0][0], tri[0][1]), (tri[1][0], tri[1][1]), (tri[2][0], tri[2][1]))
-        poly = Polygon(xy)
-        # 只检查面积，is_valid 检查相对昂贵
-        if poly.area > 1e-10:  # 使用更小的阈值避免浮点误差
-            valid_polygons.append(poly)
-
-    # 如果没有有效多边形，直接返回
-    if not valid_polygons:
-        return target_z, []
-
-    # 合并多边形
-    try:
-        merged = unary_union(valid_polygons)
-    except:
-        return target_z, []
-
-    # 处理合并结果
-    perList = []
-    if merged.is_empty:
-        return target_z, []
-
-    if merged.geom_type == 'Polygon':
-        process_polygon(merged, perList)
-    elif merged.geom_type == 'MultiPolygon':
-        for poly in merged.geoms:
-            process_polygon(poly, perList)
-    for i in perList:
-        print(target_z)
-        x_coords, y_coords = zip(*i)
-        # print(i)
-        plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path')
-        plt.show()
-    return target_z, perList
-
-
 def process_polygon(poly, perList):
     """处理单个多边形，提取外环和内环"""
     exterior = list(zip(poly.exterior.coords.xy[0], poly.exterior.coords.xy[1]))
@@ -335,6 +153,95 @@ def process_slice1(args):
     return target_z, perList
 
 
+def interp_z(p1, p2, z):
+    """线性插值 Z 平面上的交点 (x, y)"""
+    t = (z - p1[2]) / (p2[2] - p1[2])
+    x = p1[0] + t * (p2[0] - p1[0])
+    y = p1[1] + t * (p2[1] - p1[1])
+    return (x, y)
+
+
+def clip_triangle_by_z(tri, z):
+    """
+    将三角形按 z 平面裁剪，只保留 z >= 平面上的部分，并投影为 2D。
+    返回一个或两个多边形。
+    """
+    above = [p for p in tri if p[2] >= z]
+    below = [p for p in tri if p[2] < z]
+
+    if len(above) == 3:
+        # 全部在上方，直接投影
+        return [Polygon([(p[0], p[1]) for p in tri])]
+    elif len(above) == 0:
+        # 全部在下方，忽略
+        return []
+    elif len(above) == 1:
+        # 一个在上，两在下，构成一个小三角形
+        p_top = above[0]
+        p_bot1, p_bot2 = below
+        ip1 = interp_z(p_top, p_bot1, z)
+        ip2 = interp_z(p_top, p_bot2, z)
+        return [Polygon([(p_top[0], p_top[1]), ip1, ip2])]
+    elif len(above) == 2:
+        # 两个在上，一个在下，构成一个四边形（两个三角拼起来）
+        p_top1, p_top2 = above
+        p_bot = below[0]
+        ip1 = interp_z(p_top1, p_bot, z)
+        ip2 = interp_z(p_top2, p_bot, z)
+        return [Polygon([(p_top1[0], p_top1[1]), p_top2[0:2], ip2, ip1])]
+
+
+def process_slice(args):
+    i, triangles = args
+    target_z = - 0.1 * i  # 设置切片平面位置
+
+    projected_polygons = []
+
+    for tri in triangles:
+        z_vals = [v[2] for v in tri]
+        if all(z > target_z for z in z_vals):
+            # 整个三角形在平面上方，直接投影到XY平面
+            xy = [(v[0], v[1]) for v in tri]
+            poly = Polygon(xy)
+            # print(poly)
+            if poly.area > 1e-10:
+                projected_polygons.append(poly)
+        elif all(z < target_z for z in z_vals):
+            continue  # 完全在下方，忽略
+        else:
+            clipped_polys = clip_triangle_by_z(tri, target_z)
+            for poly in clipped_polys:
+                if poly.is_valid and poly.area > 1e-10:
+                    projected_polygons.append(poly)
+
+    # 合并多边形
+    try:
+        merged = unary_union(projected_polygons)
+    except:
+        return target_z, []
+
+    # 处理合并结果
+    perList = []
+    if merged.is_empty:
+        return target_z, []
+
+    if merged.geom_type == 'Polygon':
+        process_polygon(merged, perList)
+    elif merged.geom_type == 'MultiPolygon':
+        for poly in merged.geoms:
+            process_polygon(poly, perList)
+    # # 绘图（可注释）
+    # for i in perList:
+    #     print(f"Z={target_z}")
+    #     print("===============================================================")
+    #     x_coords, y_coords = zip(*i)
+    #     plt.plot(x_coords, y_coords, '-o', markersize=1)
+    #     plt.gca().set_aspect('equal')
+    #     plt.title(f"Slice at z={target_z}")
+    #     plt.show()
+    return target_z, perList
+
+
 def get_scale(path, z_depth=0):
     mesh = trimesh.load(path)  # 加载模型
     triangles = mesh.triangles  # 获取三角形数据
@@ -348,7 +255,7 @@ def get_scale(path, z_depth=0):
     #     results = list(executor.map(process_slice, tasks))
     #
 
-    processes_num = 8
+    processes_num = 1
     # 并行处理切片
     with multiprocessing.Pool(processes=processes_num) as pool:
         results = pool.map(process_slice, [(i, triangles) for i in range(int(abs(z_depth * 10)) + 1)])
@@ -522,10 +429,10 @@ def scalePocket(all_scale, max_area_point, save_path):
                     else:
                         if all_heights[all_heights.index(height) + 1].is_integer():
                             # print(1, all_heights[all_heights.index(height) + 1], contour)
-                            layer_map[height][0] = [height, all_heights[all_heights.index(height) + 1]+0.1]
+                            layer_map[height][0] = [height, all_heights[all_heights.index(height) + 1] + 0.1]
                         else:
                             # print(2, all_heights[all_heights.index(height) + 1], contour)
-                            layer_map[height][0] = [height, all_heights[all_heights.index(height) + 1]+0.1]
+                            layer_map[height][0] = [height, all_heights[all_heights.index(height) + 1] + 0.1]
                     layer_map[height][1].append(i)
                 except:
                     pass
@@ -609,7 +516,6 @@ def scalePocket(all_scale, max_area_point, save_path):
         min_h, max_h = index_min_max[index]
         allPath[index][1] = [max_h, min_h]
         # print(f"索引 {index}: 最低点 = {min_h}, 最高点 = {max_h}")
-
 
     # print("===========================================")
     # print(allPath)
