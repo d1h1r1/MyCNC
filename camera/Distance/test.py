@@ -1,88 +1,102 @@
 import cv2
 import numpy as np
 
-# 假设已知红斑的实际宽度为5cm，相机焦距为800像素
-KNOWN_WIDTH = 5.0  # cm
-FOCAL_LENGTH = 800  # 需要相机标定获得
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+
+# x,y,distance
+data = [
+    (317, 233, 0),
+    (300, 234, 10),
+    (280, 234, 20),
+    (260, 234, 30),
+    (240, 234, 40),
+]
+X = np.array([[x, y] for x, y, _ in data])
+y = np.array([d for _, _, d in data])
+
+# 多项式拟合（2次）
+poly = PolynomialFeatures(degree=2)
+X_poly = poly.fit_transform(X)
+
+model = LinearRegression()
+model.fit(X_poly, y)
 
 
-def preprocess_image(image):
-    # 转换为HSV色彩空间
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+# 预测一个新点的距离
+def predict_distance(x, y):
+    input_poly = poly.transform([[x, y]])
+    return model.predict(input_poly)[0]
 
-    # 定义红斑的HSV范围（根据实际情况调整）
-    lower_red1 = np.array([0, 70, 50])
+
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    h, w = frame.shape[:2]
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    lower_red1 = np.array([0, 60, 60])
     upper_red1 = np.array([10, 255, 255])
-    lower_red2 = np.array([170, 70, 50])
+    lower_red2 = np.array([160, 60, 60])
     upper_red2 = np.array([180, 255, 255])
+    mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | cv2.inRange(hsv, lower_red2, upper_red2)
 
-    # 创建红色区域的掩膜
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = cv2.bitwise_or(mask1, mask2)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # _, mask_bright = cv2.threshold(gray, 130, 255, cv2.THRESH_BINARY)
+    # 限制亮度区间（去掉泛白区域，只保留激光点）
+    mask_bright = cv2.inRange(gray, 200, 255)  # 调整 220 这个阈值
 
-    # 形态学操作去除噪声
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask_combined = cv2.bitwise_and(mask_red, mask_bright)
 
-    return mask
+    # 找红点和最亮
+    contours, _ = cv2.findContours(mask_combined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # 找红点
+    # contours, _ = cv2.findContours(mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-
-def detect_red_spots(image):
-    mask = preprocess_image(image)
-
-    # 查找轮廓
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # 筛选较大的轮廓（根据实际情况调整面积阈值）
-    min_area = 100
-    red_spots = []
+    max_brightness = -1
+    brightest_point = None
+    best_contour = None
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > min_area:
-            red_spots.append(cnt)
+        if 100 < area:
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                brightness = gray[cy, cx]
+                x, y, w, h = cv2.boundingRect(cnt)
+                aspect_ratio = w / h
+                if not 0.8 <= aspect_ratio <= 1.2:
+                    continue  # 不是接近正方形
 
-    return red_spots
+                # 更新最亮点
+                if brightness > max_brightness:
+                    max_brightness = brightness
+                    brightest_point = (cx, cy)
+                    best_contour = cnt  # 保存该轮廓
+    # 只绘制最亮红点
+    if brightest_point:
+        cx, cy = brightest_point
+        cv2.circle(frame, (cx, cy), 6, (255, 0, 0), -1)
+        cv2.putText(frame, f"({cx}, {cy}) L:{max_brightness}", (cx + 10, cy - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+        print(f"最亮红点位置: ({cx}, {cy})，亮度: {max_brightness}")
+        # 测试
+        print(f"预测 ({cx}, {cy}) 的距离: {predict_distance(cx, cy):.2f} cm")
+        cv2.putText(frame, f"({predict_distance(cx, cy)}", (cx + 10, cy - 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        # 用矩形框出轮廓
+        x, y, w, h = cv2.boundingRect(best_contour)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)  # 蓝色框
 
+    cv2.imshow("Red Bright Spot Detection", frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-def calculate_distance(image, red_spot_contour, known_width, focal_length):
-    # 获取红斑的边界矩形
-    x, y, w, h = cv2.boundingRect(red_spot_contour)
-
-    # 计算红斑在图像中的像素宽度
-    pixel_width = w
-
-    # 计算距离 (已知物体宽度 × 焦距) / 图像中的像素宽度
-    distance = (known_width * focal_length) / pixel_width
-
-    return distance
-
-
-# 读取图像
-image = cv2.imread('img.png')
-
-# 检测红斑
-red_spots = detect_red_spots(image)
-
-# 在原图上绘制红斑轮廓和距离信息
-for spot in red_spots:
-    # 绘制轮廓
-    cv2.drawContours(image, [spot], -1, (0, 255, 0), 2)
-
-    # 计算距离
-    distance = calculate_distance(image, spot, KNOWN_WIDTH, FOCAL_LENGTH)
-
-    # 获取轮廓中心点
-    M = cv2.moments(spot)
-    cx = int(M['m10'] / M['m00'])
-    cy = int(M['m01'] / M['m00'])
-
-    # 显示距离
-    cv2.putText(image, f"{distance:.2f}cm", (cx - 50, cy),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-# 显示结果
-cv2.imshow('Red Spot Detection', image)
-cv2.waitKey(0)
+cap.release()
 cv2.destroyAllWindows()
