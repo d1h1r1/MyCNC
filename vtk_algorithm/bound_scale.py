@@ -2,7 +2,8 @@ import vtk
 
 # 读取 STL 文件
 reader = vtk.vtkSTLReader()
-reader.SetFileName("../file/Elephant.stl")  # 替换为你的 STL 文件路径
+reader.SetFileName("../file/小配合件凹0.05.stl")  # 替换为你的 STL 文件路径
+# reader.SetFileName("../f")  # 替换为你的 STL 文件路径
 reader.Update()
 
 # 使用 vtkGeometryFilter 将 UnstructuredGrid 转换为 PolyData

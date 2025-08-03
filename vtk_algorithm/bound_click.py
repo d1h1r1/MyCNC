@@ -1,7 +1,8 @@
 import vtk
 
 reader = vtk.vtkSTLReader()
-reader.SetFileName("../file/1030500099_ultraArmP 从动杆修改.stl")  # 替换为你的 STL 文件路径
+# reader.SetFileName("../file/小配合件凹0.05.stl")  # 替换为你的 STL 文件路径
+reader.SetFileName("../file/小配合件凹0.05.stl")  # 替换为你的 STL 文件路径
 reader.Update()  # 读取 STL 数据
 
 # 将 vtkUnstructuredGrid 转换为 vtkPolyData
