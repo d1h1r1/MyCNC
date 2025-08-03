@@ -1,10 +1,11 @@
 import copy
 import math
 import multiprocessing
+import os
 import random
 import time
 import traceback
-from multiprocessing import Pool
+from multiprocessing import Pool, shared_memory
 import pyslm
 import shapely.geometry as sg
 import trimesh
@@ -12,10 +13,11 @@ import concurrent.futures
 from collections import defaultdict
 
 from matplotlib import pyplot as plt
-from shapely import unary_union, Polygon, LineString, polygonize, MultiLineString, GeometryCollection
+from shapely import Polygon, union_all
+from shapely.ops import unary_union
 from shapely.validation import make_valid
 import numpy as np
-
+import pygeos
 scaleZ = 0.1
 # zoffset = 0.000001
 zoffset = 1e-10
@@ -205,9 +207,12 @@ def remove_perpendicular_faces(mesh, threshold=1e-6):
 
     return new_mesh.triangles
 
+
 def process_slice(args):
+    t1 = time.time()
     i, triangles = args
     target_z = - scaleZ * i + zoffset  # 设置切片平面位置
+    z = target_z - zoffset
     projected_polygons = []
 
     for tri in triangles:
@@ -234,13 +239,18 @@ def process_slice(args):
             except:
                 traceback.print_exc()
                 return target_z - zoffset, []
+    t2 = time.time()
+    # print("1:", z, round(t2-t1, 2))
 
     # 合并多边形
     try:
         merged = unary_union(projected_polygons)
+        # merged = union_all(projected_polygons)
     except:
         traceback.print_exc()
         return target_z - zoffset, []
+    t3 = time.time()
+    # print("2:", z, round(t3-t2, 2))
     # 处理合并结果
     perList = []
     if merged.is_empty:
@@ -260,7 +270,9 @@ def process_slice(args):
     #     plt.gca().set_aspect('equal')
     #     plt.title(f"Slice at z={target_z}")
     #     plt.show()
-    z = target_z - zoffset
+
+    t4 = time.time()
+    # print("all", z, round(t4-t1, 2))
     return z, perList
 
 
@@ -268,8 +280,8 @@ def get_scale(path, z_depth=0):
     mesh = trimesh.load(path)  # 加载模型
     triangles = mesh.triangles  # 获取三角形数据
 
-    # 过滤三角形，剔除法向与z轴垂直的
-    triangles = remove_perpendicular_faces(mesh, threshold=1e-6)
+    # # 过滤三角形，剔除法向与z轴垂直的
+    # triangles = remove_perpendicular_faces(mesh, threshold=1e-6)
 
     # z_depth = -math.ceil(mesh.extents[2])
     # processes_num = 50
@@ -279,8 +291,8 @@ def get_scale(path, z_depth=0):
     # # 使用 ThreadPoolExecutor 替代 multiprocessing.Pool
     # with concurrent.futures.ThreadPoolExecutor(max_workers=processes_num) as executor:
     #     results = list(executor.map(process_slice, tasks))
-    #
 
+    # processes_num = os.cpu_count()-2
     processes_num = 8
     # 并行处理切片
     with multiprocessing.Pool(processes=processes_num) as pool:
@@ -290,30 +302,31 @@ def get_scale(path, z_depth=0):
     for target_z, perList in results:
         all_scale[target_z] = perList
 
-    # 投影：将三角面投影到 XY 平面
-    # 每个投影面是一个 2D 三角形（忽略 Z）
-    projected = mesh.copy()
-    projected.vertices[:, 2] = 0  # 把所有 Z 坐标设为 0
-
-    # 创建 2D 投影后的轮廓（封闭多边形）
-    polygons = []
-
-    for face in projected.faces:
-        tri_pts = projected.vertices[face]
-        poly = Polygon(tri_pts)
-        if poly.is_valid and not poly.is_empty:
-            polygons.append(poly)
-
-    # 合并所有三角形为一个大轮廓（可能带洞）
-    merged = unary_union(polygons)
-
-    # 如果合并结果是 MultiPolygon，只取最大外轮廓
-    if merged.geom_type == 'MultiPolygon':
-        largest = max(merged.geoms, key=lambda p: p.area)
-    else:
-        largest = merged
-
-    max_points = list(largest.exterior.coords)
+    # # 投影：将三角面投影到 XY 平面
+    # # 每个投影面是一个 2D 三角形（忽略 Z）
+    # projected = mesh.copy()
+    # projected.vertices[:, 2] = 0  # 把所有 Z 坐标设为 0
+    #
+    # # 创建 2D 投影后的轮廓（封闭多边形）
+    # polygons = []
+    #
+    # for face in projected.faces:
+    #     tri_pts = projected.vertices[face]
+    #     poly = Polygon(tri_pts)
+    #     if poly.is_valid and not poly.is_empty:
+    #         polygons.append(poly)
+    #
+    # # 合并所有三角形为一个大轮廓（可能带洞）
+    # merged = unary_union(polygons)
+    #
+    # # 如果合并结果是 MultiPolygon，只取最大外轮廓
+    # if merged.geom_type == 'MultiPolygon':
+    #     largest = max(merged.geoms, key=lambda p: p.area)
+    # else:
+    #     largest = merged
+    #
+    # max_points = list(largest.exterior.coords)
+    max_points = []
     detailFlag = True
     return max_points, all_scale, detailFlag
 
