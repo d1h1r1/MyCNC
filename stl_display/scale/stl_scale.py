@@ -17,7 +17,7 @@ from shapely import Polygon, union_all
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 import numpy as np
-import pygeos
+# import pygeos
 scaleZ = 0.1
 # zoffset = 0.000001
 zoffset = 1e-10
@@ -208,6 +208,7 @@ def remove_perpendicular_faces(mesh, threshold=1e-6):
     return new_mesh.triangles
 
 
+# 10mm 0.1  100层
 def process_slice(args):
     t1 = time.time()
     i, triangles = args
@@ -215,6 +216,8 @@ def process_slice(args):
     z = target_z - zoffset
     projected_polygons = []
 
+    # print(triangles)
+    # return z, []
     for tri in triangles:
         z_vals = [v[2] for v in tri]
         max_z = max(z_vals)
@@ -240,7 +243,7 @@ def process_slice(args):
                 traceback.print_exc()
                 return target_z - zoffset, []
     t2 = time.time()
-    # print("1:", z, round(t2-t1, 2))
+    print("1:", z, round(t2-t1, 2))
 
     # 合并多边形
     try:
@@ -250,7 +253,7 @@ def process_slice(args):
         traceback.print_exc()
         return target_z - zoffset, []
     t3 = time.time()
-    # print("2:", z, round(t3-t2, 2))
+    print("2:", z, round(t3-t2, 2))
     # 处理合并结果
     perList = []
     if merged.is_empty:
@@ -269,10 +272,12 @@ def process_slice(args):
     #     plt.plot(x_coords, y_coords, '-o', markersize=1)
     #     plt.gca().set_aspect('equal')
     #     plt.title(f"Slice at z={target_z}")
-    #     plt.show()
+    # print(z, perList)
+    # plt.show()
 
     t4 = time.time()
-    # print("all", z, round(t4-t1, 2))
+    print("all", z, round(t4-t1, 2))
+
     return z, perList
 
 
@@ -292,8 +297,9 @@ def get_scale(path, z_depth=0):
     # with concurrent.futures.ThreadPoolExecutor(max_workers=processes_num) as executor:
     #     results = list(executor.map(process_slice, tasks))
 
-    # processes_num = os.cpu_count()-2
-    processes_num = 8
+    processes_num = os.cpu_count()-2
+    print(processes_num, "processes_num")
+    # processes_num = 8
     # 并行处理切片
     with multiprocessing.Pool(processes=processes_num) as pool:
         results = pool.map(process_slice, [(i, triangles) for i in range(int(abs(z_depth * (1 / scaleZ))) + 1)])
@@ -554,25 +560,25 @@ def scalePocket(all_scale, max_area_point, save_path):
         allPath[index][1] = [max_h, min_h]
         # print(f"索引 {index}: 最低点 = {min_h}, 最高点 = {max_h}")
 
-    # print("===========================================")
-    # print(allPath)
-    # color_list = ['red', 'blue', 'green', 'purple', 'orange', 'brown', 'pink', 'gray', 'cyan', 'magenta', 'indigo',
-    #               'yellow']
-    # for i in range(len(allPath)):
-    #     try:
-    #         x_coords, y_coords = zip(*allPath[i][0][1])
-    #         color = random.choices(color_list)[0]
-    #         plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path', color=color)
-    #         # 添加文字标签
-    #         plt.text(x_coords[0], y_coords[0], i, fontsize=20, color=color, ha='right')
-    #     except:
-    #         x_coords, y_coords, z = zip(*allPath[i][0][1])
-    #         color = random.choices(color_list)[0]
-    #         plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path', color=color)
-    #         # 添加文字标签
-    #         plt.text(x_coords[0], y_coords[0], i, fontsize=20, color=color, ha='right')
-    #     print(i, allPath[i][1], allPath[i][2])
-    #     print("=====================================")
-    # plt.show()
+    print("===========================================")
+    print(allPath)
+    color_list = ['red', 'blue', 'green', 'purple', 'orange', 'brown', 'pink', 'gray', 'cyan', 'magenta', 'indigo',
+                  'yellow']
+    for i in range(len(allPath)):
+        try:
+            x_coords, y_coords = zip(*allPath[i][0][1])
+            color = random.choices(color_list)[0]
+            plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path', color=color)
+            # 添加文字标签
+            plt.text(x_coords[0], y_coords[0], i, fontsize=20, color=color, ha='right')
+        except:
+            x_coords, y_coords, z = zip(*allPath[i][0][1])
+            color = random.choices(color_list)[0]
+            plt.plot(x_coords, y_coords, '-o', markersize=1, label='Points Path', color=color)
+            # 添加文字标签
+            plt.text(x_coords[0], y_coords[0], i, fontsize=20, color=color, ha='right')
+        print(i, allPath[i][1], allPath[i][2])
+        print("=====================================")
+    plt.show()
     # print(allPath)
     return allPath, allList
