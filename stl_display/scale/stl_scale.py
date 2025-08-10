@@ -261,15 +261,6 @@ def process_slice(args):
     elif merged.geom_type == 'MultiPolygon':
         for poly in merged.geoms:
             process_polygon(poly, perList)
-    # 绘图（可注释）
-    # for i in perList:
-    #     print(f"Z={target_z}")
-    #     print("===============================================================")
-    #     x_coords, y_coords = zip(*i)
-    #     plt.plot(x_coords, y_coords, '-o', markersize=1)
-    #     plt.gca().set_aspect('equal')
-    #     plt.title(f"Slice at z={target_z}")
-    #     plt.show()
 
     t4 = time.time()
     # print("all", z, round(t4-t1, 2))
