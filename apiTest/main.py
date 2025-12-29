@@ -17,12 +17,12 @@ import requests
 
 # # 三轴粗加工
 #
-# material = json.dumps([[[-40, 40], [40, 40], [40, -40], [-40, -40]], [80, 80, 10]])
-#
-# data = {'diameter': 6, 'zPer': 1, 'stepOver': 3, 'toolNum': 1, 'spindleSpeed': 18000,
-#         'feed': 3000, "plungeFeed": 3000, 'zDepth': -10, 'toolType': 'endmill', 'materialDepth': -10, 'tabLength': 0, 'tabHigh': 0, 'tabNum': 0, 'tiltAngle': 90, 'margin': 0, 'spray': 1, 'cutMaterial': 1, 'material':material}
-#
-# files = {'file': open("../file/测试件312.stl", 'rb')}
+material = json.dumps([[[-40, 40], [40, 40], [40, -40], [-40, -40]], [80, 80, 10]])
+
+data = {'diameter': 6, 'zPer': 1, 'stepOver': 3, 'toolNum': 1, 'spindleSpeed': 18000,
+        'feed': 3000, "plungeFeed": 3000, 'zDepth': -10, 'toolType': 'endmill', 'materialDepth': -10, 'tabLength': 0, 'tabHigh': 0, 'tabNum': 0, 'tiltAngle': 90, 'margin': 0, 'spray': 1, 'cutMaterial': 1, 'material':material}
+
+files = {'file': open("../file/测试件312.stl", 'rb')}
 #
 # b = requests.post("http://127.0.0.1:5000/api/commonPath", files=files, data=data)
 # print(b.json()['gcode'])
@@ -110,11 +110,16 @@ import requests
 # b = requests.post("http://127.0.0.1:5000/api/pocketPath", data=data)
 # print(b.json()['gcode'])
 
-files = {'file': open("../file/circleInCube.stl", 'rb')}
+# files = {'file': open("../file/circleInCube.stl", 'rb')}
+#
+# # 倒角
+# data = {'diameter': 4, 'offset': -2, 'zDepth': -2, 'toolNum': 1, 'spindleSpeed': 10000,
+#         'feed': 1000, "plungeFeed": 1000, 'spray': 0}
+# #
+# b = requests.post("http://127.0.0.1:5000/api/allChamferPath", files=files, data=data)
+# print(b.json()['gcode'])
 
-# 倒角
-data = {'diameter': 4, 'offset': -2, 'zDepth': -2, 'toolNum': 1, 'spindleSpeed': 10000,
-        'feed': 1000, "plungeFeed": 1000, 'spray': 0}
 
-b = requests.post("http://127.0.0.1:5000/api/allChamferPath", files=files, data=data)
-print(b.json()['gcode'])
+b = requests.post("http://127.0.0.1:9630/api/smartCutPath", files=files, data=data)
+print(b.json())
+
