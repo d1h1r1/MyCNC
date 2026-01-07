@@ -44,7 +44,9 @@ def polygon_to_closed_extruded_mesh(polygon2d: np.ndarray, z_min: float, z_max: 
 
     return mesh
 
+
 # --- 使用示例 ---
+
 
 if __name__ == "__main__":
     # 定义一个简单多边形 (例如五边形)
