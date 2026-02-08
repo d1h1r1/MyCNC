@@ -12,6 +12,7 @@ in_stl = "output_compressed.stl"
 
 import pyvista as pv
 
+
 # 加载STL文件
 mesh = pv.read(in_stl)
 
